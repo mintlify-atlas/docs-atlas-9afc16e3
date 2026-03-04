@@ -1,0 +1,145 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "CoW Protocol SDK",
+  "projectDescription": "TypeScript SDK for trading on CoW Protocol with support for swaps, limit orders, TWAP, and cross-chain bridging",
+  "theme": "palm",
+  "primaryColor": "#040404",
+  "lightColor": "#7c7c7c",
+  "darkColor": "#c2c2c2",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/adapters",
+              "concepts/order-types",
+              "concepts/signing-schemes",
+              "concepts/app-data"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/creating-swap-orders",
+              "guides/creating-limit-orders",
+              "guides/smart-contract-wallets",
+              "guides/token-approvals",
+              "guides/order-management",
+              "guides/native-token-swaps"
+            ]
+          },
+          {
+            "group": "Advanced Features",
+            "pages": [
+              "advanced/cross-chain-bridging",
+              "advanced/programmatic-orders",
+              "advanced/twap-orders",
+              "advanced/account-abstraction",
+              "advanced/hooks",
+              "advanced/partner-fee"
+            ]
+          },
+          {
+            "group": "Migration",
+            "pages": [
+              "migration/v6-to-v7"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Core SDK",
+            "pages": [
+              "api/trading-sdk",
+              "api/order-book-api",
+              "api/order-signing-utils",
+              "api/metadata-api"
+            ]
+          },
+          {
+            "group": "Advanced SDKs",
+            "pages": [
+              "api/bridging-sdk",
+              "api/composable-sdk",
+              "api/cow-shed-sdk"
+            ]
+          },
+          {
+            "group": "Adapters",
+            "pages": [
+              "api/adapters/viem",
+              "api/adapters/ethers-v6",
+              "api/adapters/ethers-v5"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/common",
+              "api/config",
+              "api/contracts"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Examples",
+        "groups": [
+          {
+            "group": "Code Examples",
+            "pages": [
+              "examples/basic-swap",
+              "examples/limit-orders",
+              "examples/react-integration",
+              "examples/wagmi-integration",
+              "examples/nodejs-usage"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Intent-based decentralized trading protocol",
+    "Support for market swaps and limit orders",
+    "Cross-chain token bridging with multiple providers",
+    "Programmatic orders (TWAP, DCA, stop-loss)",
+    "Smart contract wallet support with pre-sign",
+    "Multiple blockchain adapter support (Viem, Ethers v5/v6)",
+    "Partner fee integration",
+    "Account abstraction with CoW Shed",
+    "Order hooks for custom logic",
+    "Multi-chain support across 11+ networks"
+  ],
+  "publicApiSurface": [
+    "TradingSdk - Main trading interface with quote fetching and order posting",
+    "OrderBookApi - Order book operations and trade retrieval",
+    "OrderSigningUtils - Cryptographic signing for orders and cancellations",
+    "MetadataApi - Order metadata and app-data management",
+    "BridgingSdk - Cross-chain bridging with multi-provider quotes",
+    "ConditionalOrderFactory - Programmatic order creation (TWAP, DCA)",
+    "CowShedSdk - Account abstraction functionality",
+    "ViemAdapter - Viem blockchain library adapter",
+    "EthersV6Adapter - Ethers.js v6 adapter",
+    "EthersV5Adapter - Ethers.js v5 adapter",
+    "SupportedChainId - Chain configuration constants",
+    "OrderKind - Order type enums (SELL/BUY)",
+    "SigningScheme - Signature schemes (EIP712, PRESIGN, etc.)",
+    "TradeParameters - Trading parameter types",
+    "QuoteResults - Quote response structures"
+  ]
+}
