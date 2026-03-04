@@ -94,7 +94,9 @@
             "pages": [
               "api/bridging-sdk",
               "api/composable-sdk",
-              "api/cow-shed-sdk"
+              "api/cow-shed-sdk",
+              "api/flash-loans-sdk",
+              "api/subgraph-sdk"
             ]
           },
           {
