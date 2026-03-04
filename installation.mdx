@@ -1,0 +1,366 @@
+---
+title: Installation
+description: Install the CoW Protocol SDK and configure your adapter for Viem, Ethers v6, or Ethers v5
+---
+
+## Package Installation
+
+Install the main SDK package using your preferred package manager:
+
+<CodeGroup>
+```bash npm
+npm install @cowprotocol/cow-sdk
+```
+
+```bash pnpm
+pnpm add @cowprotocol/cow-sdk
+```
+
+```bash yarn
+yarn add @cowprotocol/cow-sdk
+```
+</CodeGroup>
+
+## Choose Your Adapter
+
+The CoW SDK requires an adapter to interact with the blockchain. Choose the adapter that matches your Web3 library:
+
+<CardGroup cols={3}>
+  <Card title="Viem" icon="v">
+    Modern, lightweight TypeScript library
+  </Card>
+  <Card title="Ethers v6" icon="6">
+    Latest version of ethers.js
+  </Card>
+  <Card title="Ethers v5" icon="5">
+    Legacy ethers.js version
+  </Card>
+</CardGroup>
+
+<Tabs>
+  <Tab title="Viem">
+    ### Install Viem Adapter
+
+    <CodeGroup>
+    ```bash npm
+    npm install @cowprotocol/sdk-viem-adapter viem
+    ```
+
+    ```bash pnpm
+    pnpm add @cowprotocol/sdk-viem-adapter viem
+    ```
+
+    ```bash yarn
+    yarn add @cowprotocol/sdk-viem-adapter viem
+    ```
+    </CodeGroup>
+
+    ### Setup Example
+
+    ```typescript
+    import { ViemAdapter } from '@cowprotocol/sdk-viem-adapter'
+    import { createPublicClient, http, privateKeyToAccount } from 'viem'
+    import { sepolia } from 'viem/chains'
+
+    const account = privateKeyToAccount('YOUR_PRIVATE_KEY' as `0x${string}`)
+    const transport = http('YOUR_RPC_URL')
+    const provider = createPublicClient({ 
+      chain: sepolia, 
+      transport 
+    })
+
+    const adapter = new ViemAdapter({ 
+      provider, 
+      signer: account 
+    })
+    ```
+
+    <Info>
+    **Using wagmi?** You can use `useWalletClient()` hook instead of `privateKeyToAccount` for the signer parameter.
+    </Info>
+  </Tab>
+
+  <Tab title="Ethers v6">
+    ### Install Ethers v6 Adapter
+
+    <CodeGroup>
+    ```bash npm
+    npm install @cowprotocol/sdk-ethers-v6-adapter ethers
+    ```
+
+    ```bash pnpm
+    pnpm add @cowprotocol/sdk-ethers-v6-adapter ethers
+    ```
+
+    ```bash yarn
+    yarn add @cowprotocol/sdk-ethers-v6-adapter ethers
+    ```
+    </CodeGroup>
+
+    ### Setup Example
+
+    ```typescript
+    import { EthersV6Adapter } from '@cowprotocol/sdk-ethers-v6-adapter'
+    import { JsonRpcProvider, Wallet } from 'ethers'
+
+    const provider = new JsonRpcProvider('YOUR_RPC_URL')
+    const wallet = new Wallet('YOUR_PRIVATE_KEY', provider)
+    
+    const adapter = new EthersV6Adapter({ 
+      provider, 
+      signer: wallet 
+    })
+    ```
+
+    <Note>
+    Ethers v6 is the recommended version if you're using the ethers.js library.
+    </Note>
+  </Tab>
+
+  <Tab title="Ethers v5">
+    ### Install Ethers v5 Adapter
+
+    <CodeGroup>
+    ```bash npm
+    npm install @cowprotocol/sdk-ethers-v5-adapter ethers@^5.7.0
+    ```
+
+    ```bash pnpm
+    pnpm add @cowprotocol/sdk-ethers-v5-adapter ethers@^5.7.0
+    ```
+
+    ```bash yarn
+    yarn add @cowprotocol/sdk-ethers-v5-adapter ethers@^5.7.0
+    ```
+    </CodeGroup>
+
+    ### Setup Example
+
+    ```typescript
+    import { EthersV5Adapter } from '@cowprotocol/sdk-ethers-v5-adapter'
+    import { ethers } from 'ethers'
+
+    const provider = new ethers.providers.JsonRpcProvider('YOUR_RPC_URL')
+    const wallet = new ethers.Wallet('YOUR_PRIVATE_KEY', provider)
+    
+    const adapter = new EthersV5Adapter({ 
+      provider, 
+      signer: wallet 
+    })
+    ```
+
+    <Warning>
+    Ethers v5 is considered legacy. Consider upgrading to v6 or using Viem for new projects.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Peer Dependencies
+
+The CoW Protocol SDK has the following peer dependencies that may need to be installed depending on your use case:
+
+### Required
+
+```json
+{
+  "cross-fetch": "^3.x"
+}
+```
+
+<CodeGroup>
+```bash npm
+npm install cross-fetch
+```
+
+```bash pnpm
+pnpm add cross-fetch
+```
+
+```bash yarn
+yarn add cross-fetch
+```
+</CodeGroup>
+
+### Optional
+
+These dependencies are only required for specific advanced features:
+
+```json
+{
+  "ipfs-only-hash": "^4.x",
+  "multiformats": "^9.x",
+  "@openzeppelin/merkle-tree": "^1.x"
+}
+```
+
+<Info>
+- `ipfs-only-hash` and `multiformats` - Required for app-data metadata features
+- `@openzeppelin/merkle-tree` - Required for merkle tree operations in programmatic orders
+</Info>
+
+## Verification
+
+Verify your installation by importing the SDK:
+
+```typescript
+import { SupportedChainId, TradingSdk, OrderKind } from '@cowprotocol/cow-sdk'
+import { ViemAdapter } from '@cowprotocol/sdk-viem-adapter'
+
+console.log('CoW Protocol SDK installed successfully!')
+```
+
+## Version Information
+
+Current SDK version: **v7.4.1**
+
+<Note>
+If you're migrating from v6, see the [Migration Guide](/migration/v6-to-v7) for important breaking changes and upgrade instructions.
+</Note>
+
+## TypeScript Configuration
+
+The CoW Protocol SDK is written in TypeScript and includes type definitions. Ensure your `tsconfig.json` has:
+
+```json
+{
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  }
+}
+```
+
+## Environment Setup
+
+### Node.js Requirements
+
+The SDK requires Node.js version 16 or higher:
+
+```bash
+node --version  # Should be v16.0.0 or higher
+```
+
+### Environment Variables
+
+For development, create a `.env` file to store sensitive information:
+
+```bash .env
+PRIVATE_KEY=0x...
+RPC_URL=https://...
+```
+
+<Warning>
+**Security**: Never commit private keys or RPC URLs to version control. Always use environment variables or secure key management solutions.
+</Warning>
+
+## Framework-Specific Setup
+
+### React / Next.js
+
+For React applications, you'll typically use the SDK with wagmi or Rainbow Kit:
+
+```typescript
+import { useAccount, usePublicClient, useWalletClient } from 'wagmi'
+import { ViemAdapter } from '@cowprotocol/sdk-viem-adapter'
+import { setGlobalAdapter } from '@cowprotocol/cow-sdk'
+
+function useCoWAdapter() {
+  const { data: walletClient } = useWalletClient()
+  const publicClient = usePublicClient()
+  
+  if (walletClient && publicClient) {
+    return new ViemAdapter({
+      provider: publicClient,
+      walletClient
+    })
+  }
+}
+```
+
+See the [React Integration Example](/examples/react-integration) for complete setup.
+
+### Node.js
+
+For Node.js scripts and backend services:
+
+```typescript
+import 'dotenv/config'
+import { createPublicClient, http, privateKeyToAccount } from 'viem'
+import { mainnet } from 'viem/chains'
+import { ViemAdapter } from '@cowprotocol/sdk-viem-adapter'
+
+const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`)
+const provider = createPublicClient({
+  chain: mainnet,
+  transport: http(process.env.RPC_URL)
+})
+
+const adapter = new ViemAdapter({ provider, signer: account })
+```
+
+See the [Node.js Usage Example](/examples/nodejs-usage) for complete setup.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    Create your first swap in under 5 minutes
+  </Card>
+  <Card title="Adapters Concepts" icon="plug" href="/concepts/adapters">
+    Learn more about adapter configuration
+  </Card>
+  <Card title="Trading SDK API" icon="code" href="/api/trading-sdk">
+    Explore the complete TradingSdk API
+  </Card>
+  <Card title="Examples" icon="book-open" href="/examples/basic-swap">
+    Browse working code examples
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Module not found errors">
+    Ensure all peer dependencies are installed. Run:
+    ```bash
+    npm install cross-fetch
+    ```
+    or install optional dependencies if using advanced features.
+  </Accordion>
+
+  <Accordion title="Type errors with adapter">
+    Make sure you're using the correct adapter for your Web3 library version. Check that:
+    - Viem adapter requires `viem` version 1.x or higher
+    - Ethers v6 adapter requires `ethers` version 6.x
+    - Ethers v5 adapter requires `ethers` version 5.7.x
+  </Accordion>
+
+  <Accordion title="RPC connection issues">
+    Verify your RPC URL is correct and accessible:
+    ```typescript
+    const provider = createPublicClient({
+      chain: sepolia,
+      transport: http('https://sepolia.gateway.tenderly.co') // Use a reliable RPC
+    })
+    ```
+    Consider using services like Alchemy, Infura, or Tenderly for production.
+  </Accordion>
+
+  <Accordion title="Network mismatch errors">
+    Ensure the chain ID in your adapter setup matches the chain ID in the TradingSdk:
+    ```typescript
+    // Both should use the same chain
+    const provider = createPublicClient({ chain: sepolia, ... })
+    const sdk = new TradingSdk({ chainId: SupportedChainId.SEPOLIA, ... })
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Getting Help
+
+If you encounter issues during installation:
+
+- Check the [GitHub Issues](https://github.com/cowprotocol/cow-sdk/issues)
+- Join the [CoW Protocol Discord](https://discord.com/invite/cowprotocol)
+- Review the [Examples Repository](https://github.com/cowprotocol/cow-sdk/tree/main/examples)

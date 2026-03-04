@@ -1,0 +1,157 @@
+---
+title: Introduction
+description: An intent-based, MEV-protected trading protocol SDK for Ethereum and EVM-compatible networks
+---
+
+## What is CoW Protocol SDK?
+
+The CoW Protocol SDK is a comprehensive TypeScript toolkit for building trading applications on [CoW Protocol](https://cow.fi/), an intent-based decentralized exchange that protects users from MEV (Maximal Extractable Value) and offers the best available prices through batch auctions.
+
+Using CoW Protocol, you can perform swaps, limit orders, TWAP orders, and many other operations. The SDK provides tools at different abstraction levels, allowing you to conveniently implement basic scenarios while maintaining the flexibility to control all possible cases.
+
+<Note>
+In most cases, you will only need to use the **TradingSdk** - the main tool for swap and limit orders with built-in quote fetching, order signing, and posting.
+</Note>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Intent-Based Trading" icon="bullseye">
+    Express trading intent without specifying execution path. CoW Protocol finds the best route and price.
+  </Card>
+  <Card title="MEV Protection" icon="shield">
+    Built-in protection from front-running, sandwich attacks, and other MEV strategies through batch auctions.
+  </Card>
+  <Card title="Gasless Trading" icon="gas-pump">
+    Network costs are internalized in the order price - no upfront gas fees for traders.
+  </Card>
+  <Card title="Best Prices" icon="chart-line">
+    Orders compete in batch auctions across multiple liquidity sources including AMMs and private market makers.
+  </Card>
+</CardGroup>
+
+## Supported Networks
+
+The SDK supports all CoW Protocol enabled networks:
+
+<CardGroup cols={3}>
+  <Card title="Ethereum" icon="ethereum">
+    Chain ID: **1** - `SupportedChainId.MAINNET`
+  </Card>
+  <Card title="Gnosis Chain" icon="link">
+    Chain ID: **100** - `SupportedChainId.GNOSIS_CHAIN`
+  </Card>
+  <Card title="Arbitrum One" icon="network-wired">
+    Chain ID: **42161** - `SupportedChainId.ARBITRUM_ONE`
+  </Card>
+  <Card title="Base" icon="cube">
+    Chain ID: **8453** - `SupportedChainId.BASE`
+  </Card>
+  <Card title="Polygon" icon="shapes">
+    Chain ID: **137** - `SupportedChainId.POLYGON`
+  </Card>
+  <Card title="Avalanche" icon="mountain">
+    Chain ID: **43114** - `SupportedChainId.AVALANCHE`
+  </Card>
+  <Card title="Lens" icon="eye">
+    Chain ID: **232** - `SupportedChainId.LENS`
+  </Card>
+  <Card title="BNB Chain" icon="coins">
+    Chain ID: **56** - `SupportedChainId.BNB`
+  </Card>
+  <Card title="Linea" icon="layer-group">
+    Chain ID: **59144** - `SupportedChainId.LINEA`
+  </Card>
+  <Card title="Plasma" icon="bolt">
+    Chain ID: **9745** - `SupportedChainId.PLASMA`
+  </Card>
+  <Card title="Ink" icon="pen">
+    Chain ID: **57073** - `SupportedChainId.INK`
+  </Card>
+  <Card title="Sepolia (Testnet)" icon="flask">
+    Chain ID: **11155111** - `SupportedChainId.SEPOLIA`
+  </Card>
+</CardGroup>
+
+## SDK Components
+
+### Core
+
+<CardGroup cols={2}>
+  <Card title="TradingSdk" icon="arrow-right-arrow-left" href="/api/trading-sdk">
+    Main tool for swap and limit orders with built-in quote fetching, order signing, and posting
+  </Card>
+  <Card title="OrderSigningUtils" icon="pen-nib" href="/api/order-signing-utils">
+    Utilities for signing orders and cancellations using cryptographic algorithms
+  </Card>
+  <Card title="OrderBookApi" icon="book" href="/api/order-book-api">
+    Retrieve orders and trades from the CoW Protocol order book, as well as add and cancel them
+  </Card>
+  <Card title="MetadataApi" icon="database" href="/api/metadata-api">
+    API for accessing order metadata and additional information
+  </Card>
+</CardGroup>
+
+### Advanced
+
+<CardGroup cols={2}>
+  <Card title="BridgingSdk" icon="bridge" href="/api/bridging-sdk">
+    Cross-chain token transfers and bridging functionality
+  </Card>
+  <Card title="ConditionalOrder" icon="code-branch" href="/api/composable-sdk">
+    SDK for Programmatic Orders such as TWAP
+  </Card>
+  <Card title="CowShedSdk" icon="wallet" href="/api/cow-shed-sdk">
+    Account abstraction that leverages EOA with smart contract capabilities
+  </Card>
+</CardGroup>
+
+## Basic Trading Flow
+
+The typical workflow for executing a trade on CoW Protocol:
+
+<Steps>
+  <Step title="Get a quote">
+    Request a price quote from the CoW Protocol API for your trade parameters
+  </Step>
+  <Step title="Sign the order">
+    Sign the order using EIP-712 signature with your wallet
+  </Step>
+  <Step title="Post to order book">
+    Submit the signed order to the CoW Protocol order book for execution
+  </Step>
+</Steps>
+
+The SDK handles all of these steps automatically, calculating proper amounts, managing metadata, and handling network-specific parameters.
+
+## Test Coverage
+
+| Statements | Branches | Functions | Lines |
+| ---------- | -------- | --------- | ----- |
+| 94.77% | 76.78% | 97.43% | 97.67% |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install the SDK and choose your adapter
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Create your first swap in under 5 minutes
+  </Card>
+  <Card title="Examples" icon="code" href="/examples/basic-swap">
+    Explore working code examples
+  </Card>
+  <Card title="API Reference" icon="book-open" href="/api/trading-sdk">
+    Dive into the complete API documentation
+  </Card>
+</CardGroup>
+
+## Resources
+
+- [CoW Protocol Documentation](https://docs.cow.fi/)
+- [API Reference](https://api.cow.fi/docs/)
+- [GitHub Repository](https://github.com/cowprotocol/cow-sdk)
+- [Examples Repository](https://github.com/cowprotocol/cow-sdk/tree/main/examples)
+- [Discord Community](https://discord.com/invite/cowprotocol)
+- [GitHub Issues](https://github.com/cowprotocol/cow-sdk/issues)

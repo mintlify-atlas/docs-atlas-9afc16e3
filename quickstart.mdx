@@ -1,80 +1,584 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Create your first swap on CoW Protocol in under 5 minutes
 ---
 
-## Get started in three steps
+This quickstart guide will walk you through creating a complete swap from setup to execution using the CoW Protocol SDK.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+Before you begin, make sure you have:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+- Node.js 16 or higher installed
+- A wallet with a private key for signing transactions
+- An RPC endpoint URL (e.g., from Alchemy, Infura, or Tenderly)
+- Test tokens on Sepolia testnet
 
-### Step 2: Deploy your changes
+<Warning>
+**Testnet First**: This guide uses Sepolia testnet. Always test on testnets before using mainnet.
+</Warning>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+## Step 1: Install Dependencies
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+Install the CoW Protocol SDK and a Web3 adapter:
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+<CodeGroup>
+```bash npm
+npm install @cowprotocol/cow-sdk @cowprotocol/sdk-viem-adapter viem dotenv
+```
 
-### Step 3: Go live
+```bash pnpm
+pnpm add @cowprotocol/cow-sdk @cowprotocol/sdk-viem-adapter viem dotenv
+```
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+```bash yarn
+yarn add @cowprotocol/cow-sdk @cowprotocol/sdk-viem-adapter viem dotenv
+```
+</CodeGroup>
 
-## Next steps
+## Step 2: Set Up Environment Variables
 
-Now that you have your docs running, explore these key features:
+Create a `.env` file in your project root:
 
-<CardGroup cols={2}>
+```bash .env
+PRIVATE_KEY=0x...
+RPC_URL=https://sepolia.gateway.tenderly.co
+```
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+<Warning>
+**Security**: Never commit your `.env` file to version control. Add it to `.gitignore`.
+</Warning>
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+## Step 3: Configure the Adapter
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+Create a file `swap.ts` and set up your Web3 adapter:
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+<Tabs>
+  <Tab title="Viem">
+    ```typescript swap.ts
+    import 'dotenv/config'
+    import { createPublicClient, http, privateKeyToAccount } from 'viem'
+    import { sepolia } from 'viem/chains'
+    import { ViemAdapter } from '@cowprotocol/sdk-viem-adapter'
+    import { 
+      SupportedChainId, 
+      TradingSdk, 
+      OrderKind,
+      setGlobalAdapter 
+    } from '@cowprotocol/cow-sdk'
 
-</CardGroup>
+    // Create a public client (provider)
+    const publicClient = createPublicClient({
+      chain: sepolia,
+      transport: http(process.env.RPC_URL)
+    })
+
+    // Create account from private key
+    const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`)
+
+    // Create the adapter
+    const adapter = new ViemAdapter({ 
+      provider: publicClient, 
+      signer: account 
+    })
+
+    // Set global adapter (optional but recommended)
+    setGlobalAdapter(adapter)
+    ```
+  </Tab>
+
+  <Tab title="Ethers v6">
+    ```typescript swap.ts
+    import 'dotenv/config'
+    import { JsonRpcProvider, Wallet } from 'ethers'
+    import { EthersV6Adapter } from '@cowprotocol/sdk-ethers-v6-adapter'
+    import { 
+      SupportedChainId, 
+      TradingSdk, 
+      OrderKind,
+      setGlobalAdapter 
+    } from '@cowprotocol/cow-sdk'
+
+    // Create provider
+    const provider = new JsonRpcProvider(process.env.RPC_URL)
+
+    // Create wallet
+    const wallet = new Wallet(process.env.PRIVATE_KEY, provider)
+
+    // Create the adapter
+    const adapter = new EthersV6Adapter({ 
+      provider, 
+      signer: wallet 
+    })
+
+    // Set global adapter (optional but recommended)
+    setGlobalAdapter(adapter)
+    ```
+  </Tab>
+
+  <Tab title="Ethers v5">
+    ```typescript swap.ts
+    import 'dotenv/config'
+    import { ethers } from 'ethers'
+    import { EthersV5Adapter } from '@cowprotocol/sdk-ethers-v5-adapter'
+    import { 
+      SupportedChainId, 
+      TradingSdk, 
+      OrderKind,
+      setGlobalAdapter 
+    } from '@cowprotocol/cow-sdk'
+
+    // Create provider
+    const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL)
+
+    // Create wallet
+    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider)
+
+    // Create the adapter
+    const adapter = new EthersV5Adapter({ 
+      provider, 
+      signer: wallet 
+    })
+
+    // Set global adapter (optional but recommended)
+    setGlobalAdapter(adapter)
+    ```
+  </Tab>
+</Tabs>
+
+## Step 4: Initialize the TradingSdk
+
+Add the SDK initialization to your `swap.ts` file:
+
+```typescript swap.ts
+// Initialize the Trading SDK
+const sdk = new TradingSdk(
+  {
+    chainId: SupportedChainId.SEPOLIA,
+    appCode: 'MyFirstCoWSwap', // Your app identifier
+  },
+  {}, // Options (can be empty)
+  adapter // The adapter we created
+)
+```
+
+<Info>
+The `appCode` parameter is used to track your integration on [CoW Protocol's Dune dashboards](https://dune.com/cowprotocol/cowswap). Choose a unique identifier for your application.
+</Info>
+
+## Step 5: Define Token Addresses
+
+Define the tokens you want to swap. For Sepolia testnet:
+
+```typescript swap.ts
+// Token addresses on Sepolia
+const WETH_SEPOLIA = '0xfff9976782d46cc05630d1f6ebab18b2324d6b14'
+const USDC_SEPOLIA = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238'
+
+// Decimals
+const WETH_DECIMALS = 18
+const USDC_DECIMALS = 6
+```
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+These are real Sepolia testnet token addresses. Get test WETH from the [Sepolia faucet](https://www.alchemy.com/faucets/ethereum-sepolia).
 </Note>
+
+## Step 6: Create Your First Swap
+
+Now let's create a complete swap function:
+
+```typescript swap.ts
+async function executeSwap() {
+  try {
+    console.log('🔍 Getting quote...')
+    
+    // Step 1: Get a quote
+    const { quoteResults, postSwapOrderFromQuote } = await sdk.getQuote({
+      kind: OrderKind.SELL, // We're selling a specific amount
+      sellToken: WETH_SEPOLIA,
+      sellTokenDecimals: WETH_DECIMALS,
+      buyToken: USDC_SEPOLIA,
+      buyTokenDecimals: USDC_DECIMALS,
+      amount: '100000000000000', // 0.0001 WETH in wei
+      slippageBps: 50 // 0.5% slippage tolerance
+    })
+
+    // Step 2: Check the quote
+    const buyAmount = quoteResults.amountsAndCosts.afterSlippage.buyAmount
+    const sellAmount = quoteResults.amountsAndCosts.afterSlippage.sellAmount
+    
+    console.log('📊 Quote received:')
+    console.log(`   Selling: ${sellAmount} WETH`)
+    console.log(`   Buying (minimum): ${buyAmount} USDC`)
+    console.log(`   Valid for: ${quoteResults.quoteResponse.quote.validTo} seconds`)
+
+    // Step 3: Sign and post the order
+    console.log('✍️  Signing and posting order...')
+    const orderId = await postSwapOrderFromQuote()
+    
+    console.log('✅ Order created successfully!')
+    console.log(`   Order ID: ${orderId}`)
+    console.log(`   View on Explorer: https://explorer.cow.fi/sepolia/orders/${orderId}`)
+    
+    return orderId
+  } catch (error) {
+    console.error('❌ Error executing swap:', error)
+    throw error
+  }
+}
+
+// Execute the swap
+executeSwap()
+  .then(() => {
+    console.log('\n🎉 Swap completed!')
+    process.exit(0)
+  })
+  .catch((error) => {
+    console.error('\n💥 Swap failed:', error)
+    process.exit(1)
+  })
+```
+
+## Step 7: Run Your Swap
+
+Execute your script:
+
+```bash
+ts-node swap.ts
+```
+
+You should see output similar to:
+
+```
+🔍 Getting quote...
+📊 Quote received:
+   Selling: 100000000000000 WETH
+   Buying (minimum): 250000 USDC
+   Valid for: 300 seconds
+✍️  Signing and posting order...
+✅ Order created successfully!
+   Order ID: 0x7d4389693b6cf89ad6c140a113b10df08073e5ef3063d05a02f3f42e1a42f0ad...
+   View on Explorer: https://explorer.cow.fi/sepolia/orders/0x7d4389693b6cf89...
+
+🎉 Swap completed!
+```
+
+## Complete Example
+
+Here's the complete `swap.ts` file:
+
+<CodeGroup>
+```typescript Viem
+import 'dotenv/config'
+import { createPublicClient, http, privateKeyToAccount } from 'viem'
+import { sepolia } from 'viem/chains'
+import { ViemAdapter } from '@cowprotocol/sdk-viem-adapter'
+import { 
+  SupportedChainId, 
+  TradingSdk, 
+  OrderKind,
+  setGlobalAdapter 
+} from '@cowprotocol/cow-sdk'
+
+// Setup adapter
+const publicClient = createPublicClient({
+  chain: sepolia,
+  transport: http(process.env.RPC_URL)
+})
+const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`)
+const adapter = new ViemAdapter({ provider: publicClient, signer: account })
+setGlobalAdapter(adapter)
+
+// Initialize SDK
+const sdk = new TradingSdk(
+  {
+    chainId: SupportedChainId.SEPOLIA,
+    appCode: 'MyFirstCoWSwap',
+  },
+  {},
+  adapter
+)
+
+// Token configuration
+const WETH_SEPOLIA = '0xfff9976782d46cc05630d1f6ebab18b2324d6b14'
+const USDC_SEPOLIA = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238'
+
+async function executeSwap() {
+  console.log('🔍 Getting quote...')
+  
+  const { quoteResults, postSwapOrderFromQuote } = await sdk.getQuote({
+    kind: OrderKind.SELL,
+    sellToken: WETH_SEPOLIA,
+    sellTokenDecimals: 18,
+    buyToken: USDC_SEPOLIA,
+    buyTokenDecimals: 6,
+    amount: '100000000000000', // 0.0001 WETH
+    slippageBps: 50
+  })
+
+  const buyAmount = quoteResults.amountsAndCosts.afterSlippage.buyAmount
+  console.log(`📊 You will receive at least: ${buyAmount} USDC`)
+
+  console.log('✍️  Signing and posting order...')
+  const orderId = await postSwapOrderFromQuote()
+  
+  console.log('✅ Order created:', orderId)
+  console.log(`   https://explorer.cow.fi/sepolia/orders/${orderId}`)
+  
+  return orderId
+}
+
+executeSwap()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
+```
+
+```typescript Ethers v6
+import 'dotenv/config'
+import { JsonRpcProvider, Wallet } from 'ethers'
+import { EthersV6Adapter } from '@cowprotocol/sdk-ethers-v6-adapter'
+import { 
+  SupportedChainId, 
+  TradingSdk, 
+  OrderKind,
+  setGlobalAdapter 
+} from '@cowprotocol/cow-sdk'
+
+// Setup adapter
+const provider = new JsonRpcProvider(process.env.RPC_URL)
+const wallet = new Wallet(process.env.PRIVATE_KEY, provider)
+const adapter = new EthersV6Adapter({ provider, signer: wallet })
+setGlobalAdapter(adapter)
+
+// Initialize SDK
+const sdk = new TradingSdk(
+  {
+    chainId: SupportedChainId.SEPOLIA,
+    appCode: 'MyFirstCoWSwap',
+  },
+  {},
+  adapter
+)
+
+// Token configuration
+const WETH_SEPOLIA = '0xfff9976782d46cc05630d1f6ebab18b2324d6b14'
+const USDC_SEPOLIA = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238'
+
+async function executeSwap() {
+  console.log('🔍 Getting quote...')
+  
+  const { quoteResults, postSwapOrderFromQuote } = await sdk.getQuote({
+    kind: OrderKind.SELL,
+    sellToken: WETH_SEPOLIA,
+    sellTokenDecimals: 18,
+    buyToken: USDC_SEPOLIA,
+    buyTokenDecimals: 6,
+    amount: '100000000000000', // 0.0001 WETH
+    slippageBps: 50
+  })
+
+  const buyAmount = quoteResults.amountsAndCosts.afterSlippage.buyAmount
+  console.log(`📊 You will receive at least: ${buyAmount} USDC`)
+
+  console.log('✍️  Signing and posting order...')
+  const orderId = await postSwapOrderFromQuote()
+  
+  console.log('✅ Order created:', orderId)
+  console.log(`   https://explorer.cow.fi/sepolia/orders/${orderId}`)
+  
+  return orderId
+}
+
+executeSwap()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
+```
+</CodeGroup>
+
+## Understanding the Code
+
+Let's break down the key components:
+
+### Order Types
+
+```typescript
+OrderKind.SELL  // Sell exact amount, buy at least minimum
+OrderKind.BUY   // Buy exact amount, sell at most maximum
+```
+
+<Info>
+Use `SELL` when you want to sell a specific amount of tokens. Use `BUY` when you want to receive a specific amount of tokens.
+</Info>
+
+### Slippage Tolerance
+
+```typescript
+slippageBps: 50  // 0.5% = 50 basis points
+slippageBps: 100 // 1% = 100 basis points
+slippageBps: 200 // 2% = 200 basis points
+```
+
+Slippage protects you from price movements between quote and execution.
+
+### Quote Results
+
+The quote returns detailed information:
+
+```typescript
+quoteResults.amountsAndCosts.afterSlippage.buyAmount  // Minimum buy amount
+quoteResults.amountsAndCosts.afterSlippage.sellAmount // Maximum sell amount
+quoteResults.quoteResponse.quote.validTo              // Quote expiration
+quoteResults.quoteResponse.quote.feeAmount            // Network fee
+```
+
+## Token Approval
+
+Before your first swap, you need to approve the CoW Protocol to spend your tokens:
+
+```typescript
+// Check current allowance
+const allowance = await sdk.getCowProtocolAllowance({
+  tokenAddress: WETH_SEPOLIA,
+  owner: account.address
+})
+
+console.log('Current allowance:', allowance)
+
+// Approve if needed
+if (allowance < BigInt('100000000000000')) {
+  console.log('Approving token...')
+  const txHash = await sdk.approveCowProtocol({
+    tokenAddress: WETH_SEPOLIA,
+    amount: BigInt('1000000000000000000') // 1 WETH
+  })
+  console.log('Approval tx:', txHash)
+}
+```
+
+See the [Token Approvals Guide](/guides/token-approvals) for more details.
+
+## Advanced Options
+
+### Custom Receiver
+
+Send tokens to a different address:
+
+```typescript
+const { quoteResults, postSwapOrderFromQuote } = await sdk.getQuote({
+  kind: OrderKind.SELL,
+  sellToken: WETH_SEPOLIA,
+  sellTokenDecimals: 18,
+  buyToken: USDC_SEPOLIA,
+  buyTokenDecimals: 6,
+  amount: '100000000000000',
+  receiver: '0x...' // Different recipient address
+})
+```
+
+### Order Validity Period
+
+Control how long the order is valid:
+
+```typescript
+const { quoteResults, postSwapOrderFromQuote } = await sdk.getQuote({
+  kind: OrderKind.SELL,
+  sellToken: WETH_SEPOLIA,
+  sellTokenDecimals: 18,
+  buyToken: USDC_SEPOLIA,
+  buyTokenDecimals: 6,
+  amount: '100000000000000',
+  validFor: 600 // Valid for 10 minutes (600 seconds)
+})
+```
+
+### Partially Fillable Orders
+
+Allow partial order fills:
+
+```typescript
+const { quoteResults, postSwapOrderFromQuote } = await sdk.getQuote({
+  kind: OrderKind.SELL,
+  sellToken: WETH_SEPOLIA,
+  sellTokenDecimals: 18,
+  buyToken: USDC_SEPOLIA,
+  buyTokenDecimals: 6,
+  amount: '1000000000000000000', // 1 WETH
+  partiallyFillable: true // Allow partial fills
+})
+```
+
+## Monitoring Your Order
+
+After posting an order, you can track its status:
+
+```typescript
+// Get order details
+const order = await sdk.getOrder({ orderUid: orderId })
+
+console.log('Order status:', order.status)
+console.log('Executed amount:', order.executedSellAmount)
+```
+
+Order statuses:
+- `open` - Order is waiting to be filled
+- `fulfilled` - Order is completely filled
+- `expired` - Order expired before being filled
+- `cancelled` - Order was cancelled
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Creating Swap Orders" icon="arrows-rotate" href="/guides/creating-swap-orders">
+    Learn advanced swap order configuration
+  </Card>
+  <Card title="Creating Limit Orders" icon="chart-line" href="/guides/creating-limit-orders">
+    Create limit orders with specific prices
+  </Card>
+  <Card title="Token Approvals" icon="check-circle" href="/guides/token-approvals">
+    Manage token approvals efficiently
+  </Card>
+  <Card title="Order Management" icon="list-check" href="/guides/order-management">
+    Query, monitor, and cancel orders
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Insufficient balance error">
+    Make sure you have enough tokens in your wallet. Get test WETH from the [Sepolia faucet](https://www.alchemy.com/faucets/ethereum-sepolia).
+  </Accordion>
+
+  <Accordion title="Insufficient allowance error">
+    You need to approve the CoW Protocol to spend your tokens first. See the [Token Approval](#token-approval) section above.
+  </Accordion>
+
+  <Accordion title="Quote expired error">
+    Quotes are only valid for a limited time (default 5 minutes). Get a new quote if yours expired.
+  </Accordion>
+
+  <Accordion title="RPC connection error">
+    Verify your RPC URL is correct in the `.env` file. Try using a different RPC provider like:
+    - `https://sepolia.gateway.tenderly.co`
+    - `https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY`
+    - `https://sepolia.infura.io/v3/YOUR_KEY`
+  </Accordion>
+
+  <Accordion title="Invalid private key error">
+    Ensure your private key in `.env` starts with `0x` and is a valid 64-character hex string.
+  </Accordion>
+</AccordionGroup>
+
+## Additional Resources
+
+- [CoW Explorer (Sepolia)](https://explorer.cow.fi/sepolia) - Track your orders
+- [Sepolia Faucet](https://www.alchemy.com/faucets/ethereum-sepolia) - Get test ETH and tokens
+- [Node.js Example](https://github.com/cowprotocol/cow-sdk/tree/main/examples/nodejs/viem) - Full working example
+- [React Example](https://github.com/cowprotocol/cow-sdk/tree/main/examples/react/viem) - Frontend integration

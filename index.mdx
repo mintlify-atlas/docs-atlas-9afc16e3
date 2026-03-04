@@ -1,97 +1,313 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: CoW Protocol SDK
+mode: custom
 ---
 
-## Setting up
+<div className="relative overflow-hidden dark:bg-[#0a0b0f] bg-white">
+  {/* Hero Section */}
+  <div className="relative py-20 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto">
+      <div className="grid lg:grid-cols-12 gap-12 items-center">
+        <div className="lg:col-span-7">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold dark:text-gray-100 text-gray-900 mb-6">
+            Build trading applications on CoW Protocol
+          </h1>
+          <p className="text-base sm:text-lg lg:text-xl dark:text-gray-400 text-gray-600 mb-8 max-w-2xl">
+            A complete TypeScript SDK for intent-based trading with support for swaps, limit orders, TWAP, cross-chain bridging, and programmatic orders across 11+ networks.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="/quickstart"
+              className="inline-flex items-center px-6 py-3 rounded-lg bg-[#040404] dark:bg-white text-white dark:text-[#040404] font-semibold hover:opacity-90 transition-opacity"
+            >
+              Get Started
+            </a>
+            <a
+              href="/api/trading-sdk"
+              className="inline-flex items-center px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-[#1a1d27] bg-gray-50 dark:text-gray-100 text-gray-900 font-semibold hover:border-[#040404] dark:hover:border-gray-500 transition-colors"
+            >
+              API Reference
+            </a>
+          </div>
+        </div>
+        <div className="lg:col-span-5 flex justify-center">
+          <div className="relative w-full max-w-md">
+            <div className="dark:bg-[#1a1d27] bg-gray-50 rounded-2xl p-8 border dark:border-[#27272a] border-gray-200">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg dark:bg-[#040404] bg-gray-200 flex items-center justify-center">
+                    <svg className="w-5 h-5 dark:text-white text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold dark:text-gray-100 text-gray-900">Intent-Based Trading</div>
+                    <div className="text-xs dark:text-gray-500 text-gray-600">MEV-protected execution</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg dark:bg-[#040404] bg-gray-200 flex items-center justify-center">
+                    <svg className="w-5 h-5 dark:text-white text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold dark:text-gray-100 text-gray-900">Multi-Chain Support</div>
+                    <div className="text-xs dark:text-gray-500 text-gray-600">11+ networks supported</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg dark:bg-[#040404] bg-gray-200 flex items-center justify-center">
+                    <svg className="w-5 h-5 dark:text-white text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold dark:text-gray-100 text-gray-900">Advanced Orders</div>
+                    <div className="text-xs dark:text-gray-500 text-gray-600">TWAP, DCA, conditional</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-Get your documentation site up and running in minutes.
+{/* Quick Start Section */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-3">
+    Quick start
+  </h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+    Get up and running with CoW Protocol SDK in minutes
+  </p>
+  
+  <Steps>
+    <Step title="Install the SDK">
+      Install the CoW Protocol SDK and your preferred adapter package:
+      
+      <CodeGroup>
+      ```bash npm
+      npm install @cowprotocol/cow-sdk @cowprotocol/sdk-viem-adapter viem
+      ```
+      
+      ```bash pnpm
+      pnpm add @cowprotocol/cow-sdk @cowprotocol/sdk-viem-adapter viem
+      ```
+      
+      ```bash yarn
+      yarn add @cowprotocol/cow-sdk @cowprotocol/sdk-viem-adapter viem
+      ```
+      </CodeGroup>
+    </Step>
+    
+    <Step title="Configure the adapter">
+      Set up your blockchain adapter with provider and signer:
+      
+      ```typescript
+      import { ViemAdapter } from '@cowprotocol/sdk-viem-adapter'
+      import { createPublicClient, http, privateKeyToAccount } from 'viem'
+      import { mainnet } from 'viem/chains'
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+      const adapter = new ViemAdapter({
+        provider: createPublicClient({
+          chain: mainnet,
+          transport: http('YOUR_RPC_URL')
+        }),
+        signer: privateKeyToAccount('YOUR_PRIVATE_KEY' as `0x${string}`)
+      })
+      ```
+    </Step>
+    
+    <Step title="Initialize the Trading SDK">
+      Create your Trading SDK instance:
+      
+      ```typescript
+      import { TradingSdk, SupportedChainId } from '@cowprotocol/cow-sdk'
 
-## Make it yours
+      const sdk = new TradingSdk({
+        chainId: SupportedChainId.MAINNET,
+        appCode: 'YOUR_APP_CODE'
+      }, {}, adapter)
+      ```
+    </Step>
+    
+    <Step title="Create your first swap">
+      Get a quote and execute a swap:
+      
+      ```typescript
+      import { OrderKind } from '@cowprotocol/cow-sdk'
 
-Design a docs site that looks great and empowers your users.
+      const { quoteResults, postSwapOrderFromQuote } = await sdk.getQuote({
+        kind: OrderKind.SELL,
+        sellToken: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH
+        sellTokenDecimals: 18,
+        buyToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+        buyTokenDecimals: 6,
+        amount: '1000000000000000000' // 1 WETH
+      })
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+      // Review quote and post order
+      const orderId = await postSwapOrderFromQuote()
+      console.log('Order created:', orderId)
+      ```
+    </Step>
+  </Steps>
+</div>
 
-## Create beautiful pages
+{/* Features Grid */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-3">
+    Explore by feature
+  </h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+    Everything you need to build sophisticated trading applications
+  </p>
+  
+  <CardGroup cols={2}>
+    <Card title="Swap & Limit Orders" icon="arrow-right-arrow-left" href="/guides/creating-swap-orders">
+      Create market swaps and limit orders with automatic quote fetching and order signing
+    </Card>
+    <Card title="Cross-Chain Bridging" icon="bridge" href="/advanced/cross-chain-bridging">
+      Transfer tokens across chains with integrated bridge providers and multi-quote comparison
+    </Card>
+    <Card title="Programmatic Orders" icon="clock" href="/advanced/programmatic-orders">
+      Implement TWAP, DCA, and conditional orders that execute automatically
+    </Card>
+    <Card title="Smart Wallets" icon="wallet" href="/guides/smart-contract-wallets">
+      Support smart contract wallets with pre-sign and account abstraction
+    </Card>
+    <Card title="Order Management" icon="list-check" href="/guides/order-management">
+      Retrieve order status, cancel orders on-chain or off-chain, and track trades
+    </Card>
+    <Card title="Token Approvals" icon="check-circle" href="/guides/token-approvals">
+      Manage ERC-20 token approvals for the CoW Protocol Vault Relayer
+    </Card>
+  </CardGroup>
+</div>
 
-Everything you need to create world-class documentation.
+{/* API Reference */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-3">
+    API reference
+  </h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+    Complete documentation for all SDK components
+  </p>
+  
+  <CardGroup cols={3}>
+    <Card title="TradingSdk" icon="code" href="/api/trading-sdk">
+      Main trading interface
+    </Card>
+    <Card title="OrderBookApi" icon="book" href="/api/order-book-api">
+      Order book operations
+    </Card>
+    <Card title="BridgingSdk" icon="bridge" href="/api/bridging-sdk">
+      Cross-chain bridging
+    </Card>
+    <Card title="OrderSigningUtils" icon="pen" href="/api/order-signing-utils">
+      Order signing utilities
+    </Card>
+    <Card title="ConditionalOrder" icon="filter" href="/api/composable-sdk">
+      Programmatic orders
+    </Card>
+    <Card title="Adapters" icon="plug" href="/api/adapters/viem">
+      Blockchain adapters
+    </Card>
+  </CardGroup>
+</div>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+{/* Resources */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-3">
+    Resources
+  </h2>
+  <p className="text-base dark:text-gray-400 text-gray-600 mb-8">
+    Additional resources to help you get started
+  </p>
+  
+  <div className="grid md:grid-cols-2 gap-4">
+    <a
+      href="https://github.com/cowprotocol/cow-sdk"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group block rounded-2xl border dark:border-[#27272a] border-gray-200 dark:bg-[#1a1d27] bg-gray-50 p-6 hover:border-[#040404] dark:hover:border-gray-500 transition-colors no-underline"
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div className="w-10 h-10 rounded-lg dark:bg-[#040404] bg-gray-200 flex items-center justify-center">
+          <svg className="w-5 h-5 dark:text-white text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+            <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-base font-semibold dark:text-gray-100 text-gray-900 mb-2">
+        GitHub Repository
+      </h3>
+      <p className="text-sm dark:text-gray-400 text-gray-600 mb-3">
+        View source code, report issues, and contribute to the SDK
+      </p>
+      <div className="flex items-center text-sm font-medium dark:text-gray-100 text-gray-900 group-hover:text-[#040404] dark:group-hover:text-white">
+        View on GitHub
+        <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </a>
+    
+    <a
+      href="https://discord.com/invite/cowprotocol"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group block rounded-2xl border dark:border-[#27272a] border-gray-200 dark:bg-[#1a1d27] bg-gray-50 p-6 hover:border-[#040404] dark:hover:border-gray-500 transition-colors no-underline"
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div className="w-10 h-10 rounded-lg dark:bg-[#040404] bg-gray-200 flex items-center justify-center">
+          <svg className="w-5 h-5 dark:text-white text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-base font-semibold dark:text-gray-100 text-gray-900 mb-2">
+        Discord Community
+      </h3>
+      <p className="text-sm dark:text-gray-400 text-gray-600 mb-3">
+        Join the community for support, discussions, and updates
+      </p>
+      <div className="flex items-center text-sm font-medium dark:text-gray-100 text-gray-900 group-hover:text-[#040404] dark:group-hover:text-white">
+        Join Discord
+        <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </a>
+  </div>
+</div>
 
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+{/* CTA Banner */}
+<div className="mt-20 mb-16 max-w-5xl mx-auto px-6">
+  <div className="rounded-2xl dark:bg-[#1a1d27] bg-gray-50 border dark:border-[#27272a] border-gray-200 p-8 sm:p-12 text-center">
+    <h2 className="text-2xl sm:text-3xl font-semibold dark:text-white text-gray-900 mb-4">
+      Ready to start building?
+    </h2>
+    <p className="text-base dark:text-gray-400 text-gray-600 mb-8 max-w-2xl mx-auto">
+      Follow our quickstart guide to create your first trade in minutes, or explore the full API reference for advanced use cases.
+    </p>
+    <div className="flex flex-wrap gap-3 justify-center">
+      <a
+        href="/quickstart"
+        className="inline-flex items-center px-6 py-3 rounded-lg bg-[#040404] dark:bg-white text-white dark:text-[#040404] font-semibold hover:opacity-90 transition-opacity"
+      >
+        View Quickstart
+      </a>
+      <a
+        href="/examples/basic-swap"
+        className="inline-flex items-center px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-[#1a1d27] bg-white dark:text-gray-100 text-gray-900 font-semibold hover:border-[#040404] dark:hover:border-gray-500 transition-colors"
+      >
+        Browse Examples
+      </a>
+    </div>
+  </div>
+</div>

@@ -1,122 +1,135 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "CoW Protocol SDK",
+  "theme": "palm",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#040404",
+    "light": "#7c7c7c",
+    "dark": "#c2c2c2"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "https://media.brand.dev/979cda2d-4bb2-43a6-8165-4d2ac1aa8650.png",
+  "logo": {
+    "light": "https://media.brand.dev/50b759c5-cee8-4da8-8e55-47ee49aab9a1.svg",
+    "dark": "https://media.brand.dev/50b759c5-cee8-4da8-8e55-47ee49aab9a1.svg"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/cowprotocol/cow-sdk"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/cowprotocol/cow-sdk",
+      "discord": "https://discord.com/invite/cowprotocol",
+      "x": "https://x.com/CoWSwap"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "installation",
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "concepts/adapters",
+              "concepts/order-types",
+              "concepts/signing-schemes",
+              "concepts/app-data"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Guides",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "guides/creating-swap-orders",
+              "guides/creating-limit-orders",
+              "guides/smart-contract-wallets",
+              "guides/token-approvals",
+              "guides/order-management",
+              "guides/native-token-swaps"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Advanced Features",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "advanced/cross-chain-bridging",
+              "advanced/programmatic-orders",
+              "advanced/twap-orders",
+              "advanced/account-abstraction",
+              "advanced/hooks",
+              "advanced/partner-fee"
+            ]
+          },
+          {
+            "group": "Migration",
+            "pages": [
+              "migration/v6-to-v7"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Core SDK",
             "pages": [
-              "api-reference/introduction"
+              "api/trading-sdk",
+              "api/order-book-api",
+              "api/order-signing-utils",
+              "api/metadata-api"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Advanced SDKs",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/bridging-sdk",
+              "api/composable-sdk",
+              "api/cow-shed-sdk"
+            ]
+          },
+          {
+            "group": "Adapters",
+            "pages": [
+              "api/adapters/viem",
+              "api/adapters/ethers-v6",
+              "api/adapters/ethers-v5"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/common",
+              "api/config",
+              "api/contracts"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Examples",
+        "groups": [
+          {
+            "group": "Code Examples",
+            "pages": [
+              "examples/basic-swap",
+              "examples/limit-orders",
+              "examples/react-integration",
+              "examples/wagmi-integration",
+              "examples/nodejs-usage"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

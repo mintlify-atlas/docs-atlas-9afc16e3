@@ -1,0 +1,456 @@
+---
+title: 'Native Token Swaps'
+description: 'Trade blockchain native tokens like ETH using the CoW Protocol SDK'
+icon: 'ethereum'
+---
+
+# Native Token Swaps
+
+Learn how to sell blockchain native tokens (like ETH on Ethereum) using CoW Protocol's EthFlow contract.
+
+## Overview
+
+Native tokens (ETH, MATIC, etc.) require special handling because they're not ERC-20 tokens. CoW Protocol uses the **EthFlow** contract to enable native token trading through on-chain transactions.
+
+<Note>
+Currently, only **selling** native tokens is supported. To buy native tokens, trade for wrapped versions (e.g., WETH) first.
+</Note>
+
+## How It Works
+
+When you sell native tokens:
+
+1. An on-chain transaction is sent to the EthFlow contract
+2. Your native tokens are locked in the contract
+3. The order is created in the CoW Protocol order book
+4. When filled, you receive your buy tokens
+5. If unfilled, you can cancel and reclaim your native tokens
+
+<Steps>
+  <Step title="Create order with native token address">
+    Use the special address `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE` for native tokens
+  </Step>
+  <Step title="SDK sends on-chain transaction">
+    Your native tokens are sent to the EthFlow contract
+  </Step>
+  <Step title="Order is created">
+    The order appears in the order book and can be filled by solvers
+  </Step>
+</Steps>
+
+## Automatic Detection
+
+The `postSwapOrder` method automatically detects native token orders and uses the EthFlow contract:
+
+```typescript
+import { 
+  SupportedChainId, 
+  OrderKind, 
+  TradeParameters, 
+  TradingSdk 
+} from '@cowprotocol/sdk-trading'
+import { ViemAdapter } from '@cowprotocol/sdk-viem-adapter'
+import { createPublicClient, http, privateKeyToAccount } from 'viem'
+import { sepolia } from 'viem/chains'
+
+const adapter = new ViemAdapter({
+  provider: createPublicClient({
+    chain: sepolia,
+    transport: http('YOUR_RPC_URL')
+  }),
+  signer: privateKeyToAccount('YOUR_PRIVATE_KEY' as `0x${string}`)
+})
+
+const sdk = new TradingSdk({
+  chainId: SupportedChainId.SEPOLIA,
+  appCode: 'YOUR_APP_CODE',
+}, {}, adapter)
+
+const parameters: TradeParameters = {
+  kind: OrderKind.SELL,
+  sellToken: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // Native ETH
+  sellTokenDecimals: 18,
+  buyToken: '0x0625afb445c3b6b7b929342a04a22599fd5dbb59',
+  buyTokenDecimals: 18,
+  amount: '100000000000000000', // 0.1 ETH
+}
+
+// SDK automatically detects this is a native token order
+const { orderId, txHash } = await sdk.postSwapOrder(parameters)
+
+console.log('Order ID:', orderId)
+console.log('Transaction hash:', txHash)
+```
+
+<Warning>
+The special address `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE` (mixed case) is used to identify native tokens. It's not a real contract address.
+</Warning>
+
+## Using postSellNativeCurrencyOrder
+
+For more control over native token orders, use the dedicated `postSellNativeCurrencyOrder` method:
+
+### Method Signature
+
+```typescript
+postSellNativeCurrencyOrder(
+  params: TradeParameters,
+  advancedSettings?: SwapAdvancedSettings
+): Promise<{
+  orderId: string
+  txHash: string
+  signingScheme: SigningScheme
+  signature: string
+  orderToSign: UnsignedOrder
+}>
+```
+
+### Parameters
+
+- `params` - Trade parameters with native token as sell token
+- `advancedSettings` - Optional advanced settings
+
+### Returns
+
+- `orderId` - Unique order identifier
+- `txHash` - Transaction hash of the EthFlow transaction
+- `signingScheme` - Always `SigningScheme.EIP1271` for EthFlow
+- `signature` - Empty string (signature is the transaction itself)
+- `orderToSign` - The order parameters
+
+### Example
+
+```typescript
+import { 
+  SupportedChainId, 
+  OrderKind, 
+  TradeParameters, 
+  TradingSdk 
+} from '@cowprotocol/sdk-trading'
+import { ViemAdapter } from '@cowprotocol/sdk-viem-adapter'
+import { createPublicClient, http, privateKeyToAccount } from 'viem'
+import { sepolia } from 'viem/chains'
+
+const adapter = new ViemAdapter({
+  provider: createPublicClient({
+    chain: sepolia,
+    transport: http('YOUR_RPC_URL')
+  }),
+  signer: privateKeyToAccount('YOUR_PRIVATE_KEY' as `0x${string}`)
+})
+
+const sdk = new TradingSdk({
+  chainId: SupportedChainId.SEPOLIA,
+  appCode: 'YOUR_APP_CODE',
+}, {}, adapter)
+
+const parameters: TradeParameters = {
+  kind: OrderKind.SELL,
+  sellToken: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+  sellTokenDecimals: 18,
+  buyToken: '0x0625afb445c3b6b7b929342a04a22599fd5dbb59',
+  buyTokenDecimals: 18,
+  amount: '100000000000000000', // 0.1 ETH
+}
+
+const result = await sdk.postSellNativeCurrencyOrder(parameters)
+
+console.log('Order created:', result.orderId)
+console.log('Transaction:', result.txHash)
+
+// Wait for transaction confirmation
+await adapter.provider.waitForTransactionReceipt({ hash: result.txHash })
+console.log('Transaction confirmed!')
+```
+
+## Complete Example with Quote
+
+Get a quote first, then create the order:
+
+```typescript
+import { 
+  TradingSdk,
+  SupportedChainId,
+  OrderKind,
+  TradeParameters,
+} from '@cowprotocol/sdk-trading'
+import { parseEther } from 'viem'
+
+const sdk = new TradingSdk({
+  chainId: SupportedChainId.MAINNET,
+  appCode: 'YOUR_APP_CODE',
+}, {}, adapter)
+
+const parameters: TradeParameters = {
+  kind: OrderKind.SELL,
+  sellToken: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // ETH
+  sellTokenDecimals: 18,
+  buyToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+  buyTokenDecimals: 6,
+  amount: parseEther('1').toString(), // 1 ETH
+}
+
+// Step 1: Get quote
+const { quoteResults } = await sdk.getQuote(parameters)
+
+const expectedUSDC = quoteResults.amountsAndCosts.afterSlippage.buyAmount
+const ethAmount = parseEther('1')
+
+console.log(`Selling ${ethAmount} ETH`)
+console.log(`Expected to receive at least: ${expectedUSDC} USDC`)
+
+// Step 2: Confirm with user
+if (confirm('Proceed with the trade?')) {
+  const { orderId, txHash } = await sdk.postSellNativeCurrencyOrder(parameters)
+  
+  console.log('Order ID:', orderId)
+  console.log('Transaction hash:', txHash)
+  
+  // Step 3: Wait for confirmation
+  await adapter.provider.waitForTransactionReceipt({ hash: txHash })
+  console.log('Order created successfully!')
+}
+```
+
+## Order Kinds for Native Tokens
+
+<Tabs>
+  <Tab title="SELL Orders (Supported)">
+    Sell native tokens for ERC-20 tokens:
+    
+    ```typescript
+    const parameters: TradeParameters = {
+      kind: OrderKind.SELL,
+      sellToken: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+      sellTokenDecimals: 18,
+      buyToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+      buyTokenDecimals: 6,
+      amount: '1000000000000000000', // Selling 1 ETH
+    }
+    ```
+    
+    ✅ **Supported**: You can sell exactly 1 ETH and receive USDC
+  </Tab>
+  
+  <Tab title="BUY Orders (Limited)">
+    Buy a specific amount, paying with native tokens:
+    
+    ```typescript
+    const parameters: TradeParameters = {
+      kind: OrderKind.BUY,
+      sellToken: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+      sellTokenDecimals: 18,
+      buyToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
+      buyTokenDecimals: 6,
+      amount: '1000000000', // Buying 1000 USDC
+    }
+    ```
+    
+    ⚠️ **Limited**: BUY orders work but with limitations due to how EthFlow handles amounts
+  </Tab>
+</Tabs>
+
+<Note>
+For most use cases, use `OrderKind.SELL` when trading native tokens for better UX and predictability.
+</Note>
+
+## Gas Costs
+
+Native token orders are more expensive than regular orders because they require on-chain transactions:
+
+| Action | Gas Cost (Estimate) | Cost at 50 gwei & $2000 ETH |
+|--------|---------------------|-----------------------------|
+| Create EthFlow order | ~150,000-200,000 | $15-$20 |
+| Regular order | 0 (off-chain) | $0 |
+| Cancel EthFlow order | ~50,000-70,000 | $5-$7 |
+
+<Warning>
+Always ensure you have enough ETH for gas **in addition to** the amount you're selling.
+</Warning>
+
+## Implementation Details
+
+Under the hood, the SDK:
+
+1. Detects native token by checking if `sellToken` equals the EthFlow marker address
+2. Gets a quote with special EthFlow parameters:
+   - `signingScheme: SigningScheme.EIP1271`
+   - `onchainOrder: true`
+   - `verificationGasLimit: 0` (subsidized)
+3. Creates a transaction to the EthFlow contract
+4. Uploads app-data to the order book
+5. Returns the order ID and transaction hash
+
+### From the Source Code
+
+```typescript
+// From postSellNativeCurrencyOrder.ts
+export async function postSellNativeCurrencyOrder(
+  orderBookApi: OrderBookApi,
+  appData: Pick<TradingAppDataInfo, 'fullAppData' | 'appDataKeccak256'>,
+  _params: LimitTradeParametersFromQuote,
+  additionalParams: PostTradeAdditionalParams = {},
+  paramSigner?: SignerLike,
+): Promise<OrderPostingResult> {
+  const signer = paramSigner 
+    ? getGlobalAdapter().createSigner(paramSigner) 
+    : getGlobalAdapter().signer
+
+  const { appDataKeccak256, fullAppData } = appData
+
+  const { orderId, transaction, orderToSign } = await getEthFlowTransaction(
+    appDataKeccak256,
+    _params,
+    orderBookApi.context.chainId,
+    additionalParams,
+    signer,
+  )
+
+  log('Uploading app-data')
+  await orderBookApi.uploadAppData(appDataKeccak256, fullAppData)
+
+  log('Sending on-chain order transaction')
+  const txReceipt = await signer.sendTransaction(transaction)
+
+  log(`On-chain order transaction sent, txHash: ${txReceipt.hash}, order: ${orderId}`)
+  
+  return { 
+    txHash: txReceipt.hash, 
+    orderId, 
+    orderToSign, 
+    signature: '', 
+    signingScheme: SigningScheme.EIP1271 
+  }
+}
+```
+
+## Cancelling Native Token Orders
+
+Native token orders can be cancelled on-chain to recover your locked funds:
+
+```typescript
+import { TradingSdk } from '@cowprotocol/sdk-trading'
+
+const sdk = new TradingSdk({
+  chainId: SupportedChainId.MAINNET,
+  appCode: 'YOUR_APP_CODE',
+}, {}, adapter)
+
+// Create native token order
+const { orderId, txHash } = await sdk.postSellNativeCurrencyOrder(parameters)
+
+// Later, cancel the order
+try {
+  // Off-chain cancellation (soft cancel)
+  await sdk.offChainCancelOrder({ orderUid: orderId })
+  console.log('Order cancelled (soft)')
+} catch (error) {
+  // On-chain cancellation (hard cancel, refunds your ETH)
+  const cancelTxHash = await sdk.onChainCancelOrder({ orderUid: orderId })
+  console.log('Cancellation transaction:', cancelTxHash)
+  
+  await adapter.provider.waitForTransactionReceipt({ hash: cancelTxHash })
+  console.log('Order cancelled and ETH refunded')
+}
+```
+
+<Note>
+When you cancel an EthFlow order on-chain, your native tokens are automatically refunded.
+</Note>
+
+## Advanced: Custom EthFlow Parameters
+
+For advanced use cases, you can customize EthFlow behavior:
+
+```typescript
+import { SwapAdvancedSettings } from '@cowprotocol/sdk-trading'
+
+const advancedSettings: SwapAdvancedSettings = {
+  quoteRequest: {
+    signingScheme: SigningScheme.EIP1271,
+    onchainOrder: true,
+    verificationGasLimit: 0,
+    validFor: 3600, // 1 hour
+  },
+}
+
+const { orderId, txHash } = await sdk.postSellNativeCurrencyOrder(
+  parameters,
+  advancedSettings
+)
+```
+
+## Common Chains and Native Tokens
+
+| Chain | Native Token | Address to Use |
+|-------|-------------|----------------|
+| Ethereum | ETH | `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE` |
+| Gnosis | xDAI | `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE` |
+| Arbitrum | ETH | `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE` |
+| Sepolia | ETH | `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE` |
+
+## Best Practices
+
+1. **Check balance**: Ensure you have enough native tokens plus gas
+2. **Wait for confirmation**: Always wait for the EthFlow transaction to confirm
+3. **Monitor gas prices**: Native token orders are expensive, wait for low gas
+4. **Use SELL orders**: More predictable than BUY orders for native tokens
+5. **Consider WETH**: For small amounts, wrapping to WETH might be cheaper
+6. **Handle errors**: EthFlow transactions can fail, implement proper error handling
+
+## Common Issues and Solutions
+
+### Transaction Reverts
+
+**Problem**: EthFlow transaction reverts.
+
+**Solution**:
+- Ensure you have enough ETH for both the order amount AND gas
+- Check that the order parameters are valid
+- Verify the buy token address is correct
+
+### Order Not Found After Transaction
+
+**Problem**: Order UID is returned but `getOrder` fails.
+
+**Solution**: Wait a few seconds for the order to be indexed by the order book before querying.
+
+### High Gas Costs
+
+**Problem**: Native token orders are too expensive.
+
+**Solution**:
+- Wait for lower gas prices
+- For small amounts, consider wrapping to WETH first
+- Batch multiple operations if possible
+
+## Alternatives: Using Wrapped Native Tokens
+
+For smaller orders, wrapping native tokens first might be more cost-effective:
+
+```typescript
+// Option 1: Native token order (one transaction, higher gas)
+const { orderId } = await sdk.postSellNativeCurrencyOrder({
+  kind: OrderKind.SELL,
+  sellToken: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+  // ... other params
+})
+
+// Option 2: Wrap then trade (two transactions, potentially cheaper)
+// Step 1: Wrap ETH to WETH
+const wethContract = getContract({ address: WETH_ADDRESS, abi: WETH_ABI })
+await wethContract.write.deposit({ value: parseEther('1') })
+
+// Step 2: Regular swap order (off-chain, free)
+const { orderId } = await sdk.postSwapOrder({
+  kind: OrderKind.SELL,
+  sellToken: WETH_ADDRESS, // WETH instead of native
+  // ... other params
+})
+```
+
+## Next Steps
+
+- Learn about [Creating Swap Orders](/guides/creating-swap-orders) for regular ERC-20 trading
+- See [Order Management](/guides/order-management) to track native token orders
+- Explore [Token Approvals](/guides/token-approvals) (not needed for native tokens!)

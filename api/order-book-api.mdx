@@ -1,0 +1,818 @@
+---
+title: 'OrderBookApi'
+description: 'Direct API client for CoW Protocol OrderBook endpoints'
+icon: 'book'
+---
+
+## Overview
+
+The `OrderBookApi` class provides direct access to the CoW Protocol OrderBook API. It handles quotes, order submission, order retrieval, cancellations, and trading data with built-in rate limiting, retries, and error handling.
+
+## Installation
+
+```bash
+npm install @cowprotocol/sdk-order-book
+# or
+pnpm add @cowprotocol/sdk-order-book
+# or
+yarn add @cowprotocol/sdk-order-book
+```
+
+## Constructor
+
+```typescript
+new OrderBookApi(context?: PartialApiContext)
+```
+
+<ParamField path="context" type="PartialApiContext">
+  API configuration options
+  
+  <Expandable title="PartialApiContext properties">
+    <ParamField path="chainId" type="SupportedChainId" required>
+      Chain ID (e.g., 1 for Mainnet, 100 for Gnosis Chain)
+    </ParamField>
+    <ParamField path="env" type="'prod' | 'staging'" default="prod">
+      Environment to use
+    </ParamField>
+    <ParamField path="apiKey" type="string">
+      Partner API key for authenticated access with higher rate limits
+    </ParamField>
+    <ParamField path="baseUrls" type="ApiBaseUrls">
+      Custom API endpoint URLs per chain
+    </ParamField>
+    <ParamField path="limiterOpts" type="RateLimiterOpts">
+      Rate limiter configuration
+    </ParamField>
+    <ParamField path="backoffOpts" type="BackoffOptions">
+      Exponential backoff configuration for retries
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Basic Setup
+
+```typescript
+import { OrderBookApi, SupportedChainId } from '@cowprotocol/sdk-order-book'
+
+const orderBookApi = new OrderBookApi({
+  chainId: SupportedChainId.MAINNET,
+  env: 'prod',
+})
+```
+
+## Quote Methods
+
+### getQuote
+
+Get a quote for an order before signing and submitting.
+
+```typescript
+async getQuote(
+  requestBody: OrderQuoteRequest,
+  contextOverride?: PartialApiContext
+): Promise<OrderQuoteResponse>
+```
+
+<ParamField path="requestBody" type="OrderQuoteRequest" required>
+  Quote request parameters
+  
+  <Expandable title="OrderQuoteRequest properties">
+    <ParamField path="sellToken" type="string" required>
+      Sell token address
+    </ParamField>
+    <ParamField path="buyToken" type="string" required>
+      Buy token address
+    </ParamField>
+    <ParamField path="from" type="string" required>
+      User address
+    </ParamField>
+    <ParamField path="receiver" type="string" required>
+      Receiver address (can be same as from)
+    </ParamField>
+    <ParamField path="kind" type="'sell' | 'buy'" required>
+      Order kind
+    </ParamField>
+    <ParamField path="sellAmountBeforeFee" type="string">
+      Sell amount (for sell orders)
+    </ParamField>
+    <ParamField path="buyAmountAfterFee" type="string">
+      Buy amount (for buy orders)
+    </ParamField>
+    <ParamField path="partiallyFillable" type="boolean" default="false">
+      Allow partial fills
+    </ParamField>
+    <ParamField path="signingScheme" type="SigningScheme" default="eip712">
+      Signing scheme (eip712, ethsign, presign, eip1271)
+    </ParamField>
+    <ParamField path="validTo" type="number">
+      Order expiration timestamp
+    </ParamField>
+    <ParamField path="appData" type="string">
+      App data hash (bytes32)
+    </ParamField>
+    <ParamField path="priceQuality" type="'fast' | 'optimal'" default="optimal">
+      Quote price quality
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="quote" type="OrderQuoteResponse">
+  Hydrated quote ready for signing
+  
+  <Expandable title="OrderQuoteResponse properties">
+    <ResponseField name="quote" type="object">
+      Quote details with all order parameters
+    </ResponseField>
+    <ResponseField name="from" type="string">
+      User address
+    </ResponseField>
+    <ResponseField name="expiration" type="string">
+      Quote expiration time
+    </ResponseField>
+    <ResponseField name="id" type="number">
+      Quote ID
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Example
+
+```typescript
+const quoteRequest = {
+  sellToken: '0xA0b86a33E6417b528874E10EB3a95beb4F25A0E3', // GNO
+  buyToken: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH
+  from: '0x123...',
+  receiver: '0x123...',
+  sellAmountBeforeFee: '1000000000000000000', // 1 GNO
+  kind: 'sell',
+}
+
+const { quote } = await orderBookApi.getQuote(quoteRequest)
+console.log('Quote:', quote)
+```
+
+## Order Management Methods
+
+### sendOrder
+
+Submit a signed order to the order book.
+
+```typescript
+async sendOrder(
+  requestBody: OrderCreation,
+  contextOverride?: PartialApiContext
+): Promise<string>
+```
+
+<ParamField path="requestBody" type="OrderCreation" required>
+  Signed order data
+  
+  <Expandable title="OrderCreation properties">
+    <ParamField path="sellToken" type="string" required>
+      Sell token address
+    </ParamField>
+    <ParamField path="buyToken" type="string" required>
+      Buy token address
+    </ParamField>
+    <ParamField path="sellAmount" type="string" required>
+      Sell amount
+    </ParamField>
+    <ParamField path="buyAmount" type="string" required>
+      Buy amount
+    </ParamField>
+    <ParamField path="validTo" type="number" required>
+      Expiration timestamp
+    </ParamField>
+    <ParamField path="appData" type="string" required>
+      App data hash
+    </ParamField>
+    <ParamField path="feeAmount" type="string" required>
+      Fee amount
+    </ParamField>
+    <ParamField path="kind" type="string" required>
+      Order kind
+    </ParamField>
+    <ParamField path="partiallyFillable" type="boolean" required>
+      Partially fillable flag
+    </ParamField>
+    <ParamField path="signature" type="string" required>
+      Order signature
+    </ParamField>
+    <ParamField path="signingScheme" type="string" required>
+      Signing scheme used
+    </ParamField>
+    <ParamField path="from" type="string" required>
+      Order creator address
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="orderUid" type="string">
+  Unique order identifier
+</ResponseField>
+
+#### Example
+
+```typescript
+import { OrderSigningUtils } from '@cowprotocol/sdk-order-signing'
+
+// After getting a quote and signing it
+const signingResult = await OrderSigningUtils.signOrder(
+  quote,
+  chainId,
+  signer
+)
+
+const orderId = await orderBookApi.sendOrder({
+  ...quote,
+  ...signingResult,
+})
+
+console.log('Order submitted:', orderId)
+```
+
+---
+
+### getOrder
+
+Retrieve order details by UID.
+
+```typescript
+async getOrder(
+  orderUid: string,
+  contextOverride?: PartialApiContext
+): Promise<EnrichedOrder>
+```
+
+<ParamField path="orderUid" type="string" required>
+  Unique order identifier
+</ParamField>
+
+<ResponseField name="order" type="EnrichedOrder">
+  Complete order information
+  
+  <Expandable title="EnrichedOrder properties">
+    <ResponseField name="uid" type="string">
+      Order unique identifier
+    </ResponseField>
+    <ResponseField name="sellToken" type="string">
+      Sell token address
+    </ResponseField>
+    <ResponseField name="buyToken" type="string">
+      Buy token address
+    </ResponseField>
+    <ResponseField name="sellAmount" type="string">
+      Sell amount
+    </ResponseField>
+    <ResponseField name="buyAmount" type="string">
+      Buy amount
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Order status (open, fulfilled, cancelled, expired)
+    </ResponseField>
+    <ResponseField name="creationDate" type="string">
+      Order creation timestamp
+    </ResponseField>
+    <ResponseField name="owner" type="string">
+      Order owner address
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Example
+
+```typescript
+const order = await orderBookApi.getOrder(
+  '0xd64389693b6cf89ad6c140a113b10df08073e5ef...'
+)
+
+console.log('Order status:', order.status)
+console.log('Sell amount:', order.sellAmount)
+```
+
+---
+
+### getOrders
+
+Get all orders for a specific owner.
+
+```typescript
+async getOrders(
+  request: GetOrdersRequest,
+  contextOverride?: PartialApiContext
+): Promise<Array<EnrichedOrder>>
+```
+
+<ParamField path="request" type="GetOrdersRequest" required>
+  Query parameters
+  
+  <Expandable title="GetOrdersRequest properties">
+    <ParamField path="owner" type="string" required>
+      Owner address
+    </ParamField>
+    <ParamField path="offset" type="number" default="0">
+      Pagination offset
+    </ParamField>
+    <ParamField path="limit" type="number" default="1000">
+      Maximum orders to return
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="orders" type="Array<EnrichedOrder>">
+  List of orders
+</ResponseField>
+
+#### Example
+
+```typescript
+const orders = await orderBookApi.getOrders({
+  owner: '0x123...',
+  limit: 10,
+  offset: 0,
+})
+
+console.log(`Found ${orders.length} orders`)
+orders.forEach(order => {
+  console.log(`Order ${order.uid}: ${order.status}`)
+})
+```
+
+---
+
+### getOrderMultiEnv
+
+Attempt to get an order from multiple environments (prod/staging).
+
+```typescript
+async getOrderMultiEnv(
+  orderUid: string,
+  contextOverride?: PartialApiContext
+): Promise<EnrichedOrder>
+```
+
+<ParamField path="orderUid" type="string" required>
+  Order UID
+</ParamField>
+
+<ResponseField name="order" type="EnrichedOrder">
+  Order found in any environment
+</ResponseField>
+
+#### Example
+
+```typescript
+// Will check prod first, then staging
+const order = await orderBookApi.getOrderMultiEnv(
+  '0xd64389693b6cf89ad6c140a113b10df08073e5ef...'
+)
+```
+
+---
+
+### sendSignedOrderCancellations
+
+Cancel one or more orders (off-chain).
+
+```typescript
+async sendSignedOrderCancellations(
+  requestBody: OrderCancellations,
+  contextOverride?: PartialApiContext
+): Promise<void>
+```
+
+<ParamField path="requestBody" type="OrderCancellations" required>
+  Signed cancellation request
+  
+  <Expandable title="OrderCancellations properties">
+    <ParamField path="orderUids" type="string[]" required>
+      Array of order UIDs to cancel
+    </ParamField>
+    <ParamField path="signature" type="string" required>
+      Cancellation signature
+    </ParamField>
+    <ParamField path="signingScheme" type="string" required>
+      Signing scheme
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<Warning>
+This is a "soft cancel" and may not prevent execution if the order is already being processed.
+</Warning>
+
+#### Example
+
+```typescript
+import { OrderSigningUtils } from '@cowprotocol/sdk-order-signing'
+
+const orderUids = ['0xd64389...', '0xa12345...']
+
+const cancellationSigning = await OrderSigningUtils.signOrderCancellations(
+  orderUids,
+  chainId,
+  signer
+)
+
+await orderBookApi.sendSignedOrderCancellations({
+  ...cancellationSigning,
+  orderUids,
+})
+
+console.log('Orders cancelled')
+```
+
+## Trading Data Methods
+
+### getTrades
+
+Get all trades for an owner or order.
+
+```typescript
+async getTrades(
+  request: GetTradesRequest,
+  contextOverride?: PartialApiContext
+): Promise<Array<Trade>>
+```
+
+<ParamField path="request" type="GetTradesRequest" required>
+  Query parameters (must specify owner OR orderUid)
+  
+  <Expandable title="GetTradesRequest properties">
+    <ParamField path="owner" type="string">
+      Owner address
+    </ParamField>
+    <ParamField path="orderUid" type="string">
+      Order UID
+    </ParamField>
+    <ParamField path="offset" type="number" default="0">
+      Pagination offset
+    </ParamField>
+    <ParamField path="limit" type="number" default="10">
+      Maximum trades to return
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="trades" type="Array<Trade>">
+  List of trades
+</ResponseField>
+
+#### Example
+
+```typescript
+// Get all trades for an owner
+const trades = await orderBookApi.getTrades({
+  owner: '0x123...',
+  limit: 20,
+})
+
+// Get trades for a specific order
+const orderTrades = await orderBookApi.getTrades({
+  orderUid: '0xd64389...',
+})
+
+console.log(`Found ${trades.length} trades`)
+```
+
+---
+
+### getTxOrders
+
+Get all orders from a settlement transaction.
+
+```typescript
+async getTxOrders(
+  txHash: string,
+  contextOverride?: PartialApiContext
+): Promise<Array<EnrichedOrder>>
+```
+
+<ParamField path="txHash" type="string" required>
+  Settlement transaction hash
+</ParamField>
+
+<ResponseField name="orders" type="Array<EnrichedOrder>">
+  Orders settled in the transaction
+</ResponseField>
+
+#### Example
+
+```typescript
+const orders = await orderBookApi.getTxOrders(
+  '0xabc123...'
+)
+
+console.log(`Transaction included ${orders.length} orders`)
+```
+
+## Price & Data Methods
+
+### getNativePrice
+
+Get the native price of a token.
+
+```typescript
+async getNativePrice(
+  tokenAddress: string,
+  contextOverride?: PartialApiContext
+): Promise<NativePriceResponse>
+```
+
+<ParamField path="tokenAddress" type="string" required>
+  ERC-20 token address
+</ParamField>
+
+<ResponseField name="price" type="NativePriceResponse">
+  Native price (e.g., ETH price on Ethereum)
+</ResponseField>
+
+#### Example
+
+```typescript
+const price = await orderBookApi.getNativePrice(
+  '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' // USDC
+)
+
+console.log('Native price:', price)
+```
+
+---
+
+### getTotalSurplus
+
+Get total surplus earned by a user.
+
+```typescript
+async getTotalSurplus(
+  address: string,
+  contextOverride?: PartialApiContext
+): Promise<TotalSurplus>
+```
+
+<ParamField path="address" type="string" required>
+  User address
+</ParamField>
+
+<ResponseField name="surplus" type="TotalSurplus">
+  Total surplus information
+</ResponseField>
+
+#### Example
+
+```typescript
+const surplus = await orderBookApi.getTotalSurplus('0x123...')
+console.log('Total surplus:', surplus)
+```
+
+## App Data Methods
+
+### getAppData
+
+Retrieve full app data for a given hash.
+
+```typescript
+async getAppData(
+  appDataHash: string,
+  contextOverride?: PartialApiContext
+): Promise<AppDataObject>
+```
+
+<ParamField path="appDataHash" type="string" required>
+  App data hash (bytes32)
+</ParamField>
+
+<ResponseField name="appData" type="AppDataObject">
+  Full app data content
+</ResponseField>
+
+#### Example
+
+```typescript
+const appData = await orderBookApi.getAppData(
+  '0x0000000000000000000000000000000000000000000000000000000000000000'
+)
+
+console.log('App data:', appData)
+```
+
+---
+
+### uploadAppData
+
+Upload app data to the OrderBook.
+
+```typescript
+async uploadAppData(
+  appDataHash: string,
+  fullAppData: string,
+  contextOverride?: PartialApiContext
+): Promise<AppDataObject>
+```
+
+<ParamField path="appDataHash" type="string" required>
+  App data hash (bytes32)
+</ParamField>
+
+<ParamField path="fullAppData" type="string" required>
+  Full app data content (JSON string)
+</ParamField>
+
+<ResponseField name="appData" type="AppDataObject">
+  Uploaded app data
+</ResponseField>
+
+#### Example
+
+```typescript
+const fullAppData = JSON.stringify({
+  version: '1.0.0',
+  appCode: 'My App',
+  metadata: {},
+})
+
+const result = await orderBookApi.uploadAppData(
+  appDataHash,
+  fullAppData
+)
+```
+
+## Competition & Analytics Methods
+
+### getSolverCompetition
+
+Get solver competition details for an auction.
+
+```typescript
+async getSolverCompetition(
+  auctionIdOrTxHash: number | string,
+  contextOverride?: PartialApiContext
+): Promise<SolverCompetitionResponse>
+```
+
+<ParamField path="auctionIdOrTxHash" type="number | string" required>
+  Auction ID or transaction hash
+</ParamField>
+
+<ResponseField name="competition" type="SolverCompetitionResponse">
+  Solver competition data
+</ResponseField>
+
+#### Example
+
+```typescript
+// By auction ID
+const competition = await orderBookApi.getSolverCompetition(12345)
+
+// By transaction hash
+const competition2 = await orderBookApi.getSolverCompetition('0xabc...')
+```
+
+---
+
+### getOrderCompetitionStatus
+
+Get competition status while order is open.
+
+```typescript
+async getOrderCompetitionStatus(
+  orderUid: string,
+  contextOverride?: PartialApiContext
+): Promise<CompetitionOrderStatus>
+```
+
+<ParamField path="orderUid" type="string" required>
+  Order UID
+</ParamField>
+
+<ResponseField name="status" type="CompetitionOrderStatus">
+  Competition status
+</ResponseField>
+
+## Utility Methods
+
+### getVersion
+
+Get API version.
+
+```typescript
+async getVersion(
+  contextOverride?: PartialApiContext
+): Promise<string>
+```
+
+<ResponseField name="version" type="string">
+  API version string
+</ResponseField>
+
+---
+
+### getOrderLink
+
+Generate API endpoint URL for an order.
+
+```typescript
+getOrderLink(
+  orderUid: string,
+  contextOverride?: PartialApiContext
+): string
+```
+
+<ParamField path="orderUid" type="string" required>
+  Order UID
+</ParamField>
+
+<ResponseField name="url" type="string">
+  Full API URL to get the order
+</ResponseField>
+
+#### Example
+
+```typescript
+const url = orderBookApi.getOrderLink('0xd64389...')
+console.log('Order URL:', url)
+```
+
+## Partner API Usage
+
+For authenticated access with higher rate limits:
+
+```typescript
+const orderBookApi = new OrderBookApi({
+  chainId: SupportedChainId.MAINNET,
+  apiKey: 'your-partner-api-key',
+  env: 'prod',
+})
+```
+
+This automatically routes requests through:
+- Production: `https://partners.cow.fi`
+- Staging: `https://partners.barn.cow.fi`
+
+## Custom Configuration
+
+### Rate Limiting
+
+```typescript
+import { RateLimiterOpts } from 'limiter'
+
+const limiterOpts: RateLimiterOpts = {
+  tokensPerInterval: 5,
+  interval: 'second',
+}
+
+const orderBookApi = new OrderBookApi({
+  chainId: SupportedChainId.MAINNET,
+  limiterOpts,
+})
+```
+
+### Retry Configuration
+
+```typescript
+import { BackoffOptions } from 'exponential-backoff'
+
+const backoffOpts: BackoffOptions = {
+  numOfAttempts: 5,
+  maxDelay: Infinity,
+  jitter: 'none',
+}
+
+const orderBookApi = new OrderBookApi({
+  chainId: SupportedChainId.MAINNET,
+  backoffOpts,
+})
+```
+
+### Custom Endpoints
+
+```typescript
+const orderBookApi = new OrderBookApi({
+  chainId: SupportedChainId.MAINNET,
+  baseUrls: {
+    [SupportedChainId.MAINNET]: 'https://your-custom-endpoint.com',
+  },
+})
+```
+
+## Error Handling
+
+```typescript
+import { OrderBookApiError } from '@cowprotocol/sdk-order-book'
+
+try {
+  const order = await orderBookApi.getOrder(orderUid)
+} catch (error) {
+  if (error instanceof OrderBookApiError) {
+    console.error('API error:', error.response.status, error.message)
+  } else {
+    console.error('Unexpected error:', error)
+  }
+}
+```
+
+## See Also
+
+- [TradingSdk](/api/trading-sdk) - High-level trading interface
+- [OrderSigningUtils](/api/order-signing-utils) - Order signing utilities
+- [MetadataApi](/api/metadata-api) - Order metadata management

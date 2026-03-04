@@ -1,0 +1,587 @@
+---
+title: 'Bridging SDK'
+description: 'Cross-chain token swaps using bridge providers'
+icon: 'bridge'
+---
+
+## Overview
+
+The Bridging SDK enables cross-chain token swaps by combining CoW Protocol swaps with bridge providers like Across and Bungee. It automatically routes trades through optimal paths and manages the bridging process.
+
+## Installation
+
+```bash
+npm install @cowprotocol/sdk-bridging
+```
+
+## BridgingSdk
+
+Main SDK class for bridging tokens between different chains.
+
+### Constructor
+
+```typescript
+import { BridgingSdk } from '@cowprotocol/sdk-bridging'
+import { AcrossBridgeProvider } from '@cowprotocol/sdk-bridging'
+
+const bridgingSdk = new BridgingSdk({
+  providers: [new AcrossBridgeProvider()],
+  enableLogging: true,
+  cacheConfig: {
+    enabled: true,
+    intermediateTokensTtl: 5 * 60 * 1000,
+    buyTokensTtl: 2 * 60 * 1000,
+  },
+})
+```
+
+<ParamField path="options" type="BridgingSdkOptions" required>
+  Configuration options for the SDK
+  
+  <ParamField path="options.providers" type="BridgeProvider[]" required>
+    Array of bridge providers (e.g., AcrossBridgeProvider, BungeeBridgeProvider)
+  </ParamField>
+  
+  <ParamField path="options.tradingSdk" type="TradingSdk">
+    Optional TradingSdk instance. Creates a new one if not provided.
+  </ParamField>
+  
+  <ParamField path="options.orderBookApi" type="OrderBookApi">
+    Optional OrderBookApi instance
+  </ParamField>
+  
+  <ParamField path="options.enableLogging" type="boolean">
+    Enable debug logging
+  </ParamField>
+  
+  <ParamField path="options.cacheConfig" type="BridgingSdkCacheConfig">
+    Cache configuration settings
+    
+    <ParamField path="options.cacheConfig.enabled" type="boolean" default="true">
+      Enable caching for networks and tokens
+    </ParamField>
+    
+    <ParamField path="options.cacheConfig.intermediateTokensTtl" type="number" default="300000">
+      TTL in milliseconds for intermediate tokens cache (default: 5 minutes)
+    </ParamField>
+    
+    <ParamField path="options.cacheConfig.buyTokensTtl" type="number" default="120000">
+      TTL in milliseconds for buy tokens cache (default: 2 minutes)
+    </ParamField>
+  </ParamField>
+</ParamField>
+
+<ParamField path="adapter" type="AbstractProviderAdapter">
+  Optional provider adapter (ethers v5, ethers v6, or viem)
+</ParamField>
+
+### getQuote()
+
+Get a cross-chain quote with a callback to post the order.
+
+```typescript
+const quote = await bridgingSdk.getQuote({
+  kind: OrderKind.SELL,
+  amount: parseUnits('100', 6), // 100 USDC
+  sellTokenChainId: SupportedChainId.MAINNET,
+  sellTokenAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  sellTokenDecimals: 6,
+  buyTokenChainId: TargetChainId.BASE,
+  buyTokenAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  buyTokenDecimals: 6,
+  signer: userSigner,
+})
+
+// Post the order
+const result = await quote.postSwapOrderFromQuote()
+```
+
+<ParamField path="quoteBridgeRequest" type="QuoteBridgeRequest" required>
+  Quote parameters
+  
+  <ParamField path="quoteBridgeRequest.kind" type="OrderKind" required>
+    Order type: `OrderKind.SELL` or `OrderKind.BUY`
+  </ParamField>
+  
+  <ParamField path="quoteBridgeRequest.amount" type="bigint" required>
+    Amount to sell or buy (in token atoms)
+  </ParamField>
+  
+  <ParamField path="quoteBridgeRequest.sellTokenChainId" type="SupportedChainId" required>
+    Source chain ID
+  </ParamField>
+  
+  <ParamField path="quoteBridgeRequest.sellTokenAddress" type="string" required>
+    Sell token contract address
+  </ParamField>
+  
+  <ParamField path="quoteBridgeRequest.sellTokenDecimals" type="number" required>
+    Sell token decimals
+  </ParamField>
+  
+  <ParamField path="quoteBridgeRequest.buyTokenChainId" type="TargetChainId" required>
+    Destination chain ID
+  </ParamField>
+  
+  <ParamField path="quoteBridgeRequest.buyTokenAddress" type="string" required>
+    Buy token contract address
+  </ParamField>
+  
+  <ParamField path="quoteBridgeRequest.buyTokenDecimals" type="number" required>
+    Buy token decimals
+  </ParamField>
+  
+  <ParamField path="quoteBridgeRequest.signer" type="SignerLike" required>
+    Wallet signer
+  </ParamField>
+  
+  <ParamField path="quoteBridgeRequest.owner" type="string">
+    Order owner address (defaults to signer address)
+  </ParamField>
+  
+  <ParamField path="quoteBridgeRequest.swapSlippageBps" type="number">
+    Slippage tolerance for the swap in basis points
+  </ParamField>
+  
+  <ParamField path="quoteBridgeRequest.bridgeSlippageBps" type="number">
+    Slippage tolerance for the bridge in basis points
+  </ParamField>
+</ParamField>
+
+<ParamField path="advancedSettings" type="SwapAdvancedSettings">
+  Optional advanced settings for the swap
+</ParamField>
+
+<ResponseField name="quote" type="CrossChainQuoteAndPost">
+  Returns either `QuoteAndPost` for same-chain swaps or `BridgeQuoteAndPost` for cross-chain swaps
+  
+  <ResponseField name="swap" type="QuoteResults">
+    CoW Protocol swap quote details
+  </ResponseField>
+  
+  <ResponseField name="bridge" type="BridgeQuoteResults">
+    Bridge quote details (only for cross-chain swaps)
+    
+    <ResponseField name="amountsAndCosts" type="BridgeQuoteAmountsAndCosts">
+      Bridging amounts and costs breakdown
+    </ResponseField>
+    
+    <ResponseField name="fees" type="object">
+      Bridge fees
+      
+      <ResponseField name="bridgeFee" type="bigint">
+        Relayer capital cost fee (in token atoms)
+      </ResponseField>
+      
+      <ResponseField name="destinationGasFee" type="bigint">
+        Destination gas fee (in token atoms)
+      </ResponseField>
+    </ResponseField>
+    
+    <ResponseField name="expectedFillTimeSeconds" type="number">
+      Estimated time to complete the bridge
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="postSwapOrderFromQuote" type="function">
+    Callback function to post the order on-chain
+  </ResponseField>
+</ResponseField>
+
+### getMultiQuotes()
+
+Get quotes from multiple bridge providers in parallel with progressive results.
+
+```typescript
+const results = await bridgingSdk.getMultiQuotes({
+  quoteBridgeRequest: {
+    kind: OrderKind.SELL,
+    amount: parseUnits('100', 6),
+    sellTokenChainId: SupportedChainId.MAINNET,
+    sellTokenAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    sellTokenDecimals: 6,
+    buyTokenChainId: TargetChainId.BASE,
+    buyTokenAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    buyTokenDecimals: 6,
+    signer: userSigner,
+  },
+  providerDappIds: ['across', 'bungee'],
+  options: {
+    onQuoteResult: (result) => {
+      console.log(`Quote from ${result.providerDappId}:`, result.quote)
+    },
+    totalTimeout: 40000,
+    providerTimeout: 20000,
+  },
+})
+```
+
+<ParamField path="request" type="MultiQuoteRequest" required>
+  Multi-quote request parameters
+  
+  <ParamField path="request.quoteBridgeRequest" type="QuoteBridgeRequest" required>
+    Base quote parameters
+  </ParamField>
+  
+  <ParamField path="request.providerDappIds" type="string[]">
+    Optional array of provider IDs to query. If not provided, queries all available providers.
+  </ParamField>
+  
+  <ParamField path="request.options" type="MultiQuoteOptions">
+    Optional behavior configuration
+    
+    <ParamField path="request.options.onQuoteResult" type="function">
+      Callback invoked as soon as each provider returns a result
+    </ParamField>
+    
+    <ParamField path="request.options.totalTimeout" type="number" default="40000">
+      Maximum time to wait for all providers (milliseconds)
+    </ParamField>
+    
+    <ParamField path="request.options.providerTimeout" type="number" default="20000">
+      Maximum time to wait for each provider (milliseconds)
+    </ParamField>
+  </ParamField>
+</ParamField>
+
+<ResponseField name="results" type="MultiQuoteResult[]">
+  Array of results from each provider
+  
+  <ResponseField name="providerDappId" type="string">
+    Provider identifier
+  </ResponseField>
+  
+  <ResponseField name="quote" type="BridgeQuoteAndPost | null">
+    Quote result, or null if the provider failed
+  </ResponseField>
+  
+  <ResponseField name="error" type="Error">
+    Error if the provider failed
+  </ResponseField>
+</ResponseField>
+
+### getBestQuote()
+
+Get the best quote from multiple providers based on buyAmount after slippage.
+
+```typescript
+const bestQuote = await bridgingSdk.getBestQuote({
+  quoteBridgeRequest: quoteParams,
+  providerDappIds: ['across', 'bungee'],
+  options: {
+    onQuoteResult: (result) => {
+      console.log('New best quote found:', result)
+    },
+  },
+})
+
+if (bestQuote) {
+  await bestQuote.quote.postSwapOrderFromQuote()
+}
+```
+
+<ParamField path="request" type="MultiQuoteRequest" required>
+  Same parameters as `getMultiQuotes()`
+</ParamField>
+
+<ResponseField name="bestQuote" type="MultiQuoteResult | null">
+  The best quote result found, or null if no successful quotes
+</ResponseField>
+
+### getSourceNetworks()
+
+Get available source networks for bridging.
+
+```typescript
+const sourceNetworks = await bridgingSdk.getSourceNetworks()
+// Returns all supported CoW Protocol chains
+```
+
+<ResponseField name="networks" type="ChainInfo[]">
+  Array of supported source chain information
+</ResponseField>
+
+### getTargetNetworks()
+
+Get available target networks for bridging.
+
+```typescript
+const targetNetworks = await bridgingSdk.getTargetNetworks()
+```
+
+<ResponseField name="networks" type="ChainInfo[]">
+  Array of supported destination chains across all providers
+</ResponseField>
+
+### getBuyTokens()
+
+Get available buy tokens for a specific target chain.
+
+```typescript
+const { tokens, isRouteAvailable } = await bridgingSdk.getBuyTokens({
+  buyChainId: TargetChainId.BASE,
+  sellChainId: SupportedChainId.MAINNET,
+  sellTokenAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+})
+```
+
+<ParamField path="params" type="BuyTokensParams" required>
+  Token query parameters
+  
+  <ParamField path="params.buyChainId" type="TargetChainId" required>
+    Destination chain ID
+  </ParamField>
+  
+  <ParamField path="params.sellChainId" type="SupportedChainId">
+    Source chain ID (for filtering)
+  </ParamField>
+  
+  <ParamField path="params.sellTokenAddress" type="string">
+    Sell token address (for filtering)
+  </ParamField>
+</ParamField>
+
+<ResponseField name="result" type="GetProviderBuyTokens">
+  <ResponseField name="tokens" type="TokenInfo[]">
+    Array of available buy tokens
+  </ResponseField>
+  
+  <ResponseField name="isRouteAvailable" type="boolean">
+    Whether any route is available
+  </ResponseField>
+</ResponseField>
+
+### getOrder()
+
+Get details about a cross-chain order.
+
+```typescript
+const order = await bridgingSdk.getOrder({
+  chainId: SupportedChainId.MAINNET,
+  orderId: '0x...',
+  env: 'prod',
+})
+```
+
+<ParamField path="params" type="GetOrderParams" required>
+  <ParamField path="params.chainId" type="SupportedChainId" required>
+    Chain where order was settled
+  </ParamField>
+  
+  <ParamField path="params.orderId" type="string" required>
+    Order unique identifier
+  </ParamField>
+  
+  <ParamField path="params.env" type="CowEnv">
+    Environment ('prod' or 'staging')
+  </ParamField>
+</ParamField>
+
+<ResponseField name="order" type="CrossChainOrder | null">
+  Order details including bridge status, or null if not found
+</ResponseField>
+
+### Cache Management
+
+The SDK provides methods to manage the internal cache.
+
+```typescript
+// Clear all caches
+bridgingSdk.clearCache()
+
+// Clean up expired entries
+bridgingSdk.cleanupExpiredCache()
+
+// Get cache statistics
+const stats = bridgingSdk.getCacheStats()
+console.log('Cache stats:', stats)
+// { intermediateTokens: 5, buyTokens: 12 }
+```
+
+## Bridge Providers
+
+### AcrossBridgeProvider
+
+Bridge provider using the Across Protocol.
+
+```typescript
+import { AcrossBridgeProvider } from '@cowprotocol/sdk-bridging'
+
+const acrossProvider = new AcrossBridgeProvider({
+  bridgeUrl: 'https://across.to/api',
+})
+```
+
+### BungeeBridgeProvider
+
+Bridge provider using Bungee (Socket).
+
+```typescript
+import { BungeeBridgeProvider } from '@cowprotocol/sdk-bridging'
+
+const bungeeProvider = new BungeeBridgeProvider({
+  bridgeUrl: 'https://api.socket.tech',
+  apiKey: 'your-api-key',
+})
+```
+
+### NearIntentsBridgeProvider
+
+Bridge provider for NEAR Protocol intents.
+
+```typescript
+import { NearIntentsBridgeProvider } from '@cowprotocol/sdk-bridging'
+
+const nearProvider = new NearIntentsBridgeProvider()
+```
+
+## Types
+
+### QuoteBridgeRequest
+
+Parameters for requesting a bridge quote.
+
+```typescript
+interface QuoteBridgeRequest {
+  kind: OrderKind
+  amount: bigint
+  sellTokenChainId: SupportedChainId
+  sellTokenAddress: string
+  sellTokenDecimals: number
+  buyTokenChainId: TargetChainId
+  buyTokenAddress: string
+  buyTokenDecimals: number
+  signer: SignerLike
+  owner?: string
+  swapSlippageBps?: number
+  bridgeSlippageBps?: number
+}
+```
+
+### BridgeQuoteResult
+
+Result of a bridge quote request.
+
+```typescript
+interface BridgeQuoteResult {
+  id?: string
+  isSell: boolean
+  amountsAndCosts: BridgeQuoteAmountsAndCosts
+  expectedFillTimeSeconds?: number
+  quoteTimestamp: number
+  fees: {
+    bridgeFee: bigint
+    destinationGasFee: bigint
+  }
+  limits: {
+    minDeposit: bigint
+    maxDeposit: bigint
+  }
+}
+```
+
+### BridgeQuoteAndPost
+
+Combined quote result for cross-chain swaps.
+
+```typescript
+interface BridgeQuoteAndPost {
+  swap: QuoteResults
+  bridge: BridgeQuoteResults
+  postSwapOrderFromQuote(
+    advancedSettings?: SwapAdvancedSettings,
+    signingStepManager?: SigningStepManager
+  ): Promise<OrderPostingResult>
+}
+```
+
+## Examples
+
+### Basic Cross-Chain Swap
+
+```typescript
+import { BridgingSdk, AcrossBridgeProvider } from '@cowprotocol/sdk-bridging'
+import { OrderKind } from '@cowprotocol/sdk-order-book'
+import { SupportedChainId, TargetChainId } from '@cowprotocol/sdk-config'
+
+const sdk = new BridgingSdk({
+  providers: [new AcrossBridgeProvider()],
+})
+
+// Get a quote for swapping USDC from Mainnet to Base
+const quote = await sdk.getQuote({
+  kind: OrderKind.SELL,
+  amount: parseUnits('100', 6),
+  sellTokenChainId: SupportedChainId.MAINNET,
+  sellTokenAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  sellTokenDecimals: 6,
+  buyTokenChainId: TargetChainId.BASE,
+  buyTokenAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  buyTokenDecimals: 6,
+  signer: userSigner,
+  swapSlippageBps: 50, // 0.5%
+  bridgeSlippageBps: 50, // 0.5%
+})
+
+// Post the order
+const result = await quote.postSwapOrderFromQuote()
+console.log('Order posted:', result.orderUid)
+```
+
+### Compare Multiple Providers
+
+```typescript
+const results = await sdk.getMultiQuotes({
+  quoteBridgeRequest: {
+    kind: OrderKind.SELL,
+    amount: parseUnits('1000', 6),
+    sellTokenChainId: SupportedChainId.MAINNET,
+    sellTokenAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    sellTokenDecimals: 6,
+    buyTokenChainId: TargetChainId.BASE,
+    buyTokenAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    buyTokenDecimals: 6,
+    signer: userSigner,
+  },
+  providerDappIds: ['across', 'bungee'],
+  options: {
+    onQuoteResult: (result) => {
+      if (result.quote) {
+        console.log(`${result.providerDappId}: ${result.quote.bridge.amountsAndCosts.afterFee.buyAmount} tokens`)
+      }
+    },
+  },
+})
+
+// Find the best quote manually
+const bestQuote = results
+  .filter((r) => r.quote !== null)
+  .reduce((best, current) => {
+    const currentAmount = current.quote!.bridge.amountsAndCosts.afterSlippage.buyAmount
+    const bestAmount = best.quote!.bridge.amountsAndCosts.afterSlippage.buyAmount
+    return currentAmount > bestAmount ? current : best
+  })
+
+console.log('Best provider:', bestQuote.providerDappId)
+```
+
+### Get Available Tokens
+
+```typescript
+// Get all available buy tokens on Base
+const { tokens, isRouteAvailable } = await sdk.getBuyTokens({
+  buyChainId: TargetChainId.BASE,
+})
+
+console.log('Available tokens:', tokens.length)
+tokens.forEach((token) => {
+  console.log(`${token.symbol}: ${token.address}`)
+})
+
+// Filter by sell token
+const usdcTargets = await sdk.getBuyTokens({
+  buyChainId: TargetChainId.BASE,
+  sellChainId: SupportedChainId.MAINNET,
+  sellTokenAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+})
+```

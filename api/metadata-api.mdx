@@ -1,0 +1,651 @@
+---
+title: 'MetadataApi'
+description: 'Order metadata (app-data) generation and management for CoW Protocol'
+icon: 'tags'
+---
+
+## Overview
+
+The `MetadataApi` class provides utilities for working with CoW Protocol order metadata (app-data). It handles schema validation, document generation, IPFS hashing, and conversion between different metadata formats.
+
+## Installation
+
+```bash
+npm install @cowprotocol/sdk-app-data
+# or
+pnpm add @cowprotocol/sdk-app-data
+# or
+yarn add @cowprotocol/sdk-app-data
+```
+
+## Constructor
+
+```typescript
+new MetadataApi(adapter?: AbstractProviderAdapter)
+```
+
+<ParamField path="adapter" type="AbstractProviderAdapter">
+  Provider adapter (ViemAdapter, EthersV5Adapter, or EthersV6Adapter)
+</ParamField>
+
+## Basic Setup
+
+```typescript
+import { MetadataApi } from '@cowprotocol/sdk-app-data'
+import { EthersV6Adapter } from '@cowprotocol/sdk-ethers-v6-adapter'
+import { JsonRpcProvider, Wallet } from 'ethers'
+
+const provider = new JsonRpcProvider('YOUR_RPC_URL')
+const wallet = new Wallet('YOUR_PRIVATE_KEY', provider)
+const adapter = new EthersV6Adapter({ provider, signer: wallet })
+
+const metadataApi = new MetadataApi(adapter)
+```
+
+## Core Methods
+
+### generateAppDataDoc
+
+Generate an app-data document using the latest schema version.
+
+```typescript
+async generateAppDataDoc(
+  params?: AppDataParams
+): Promise<LatestAppDataDocVersion>
+```
+
+<ParamField path="params" type="AppDataParams">
+  App data parameters
+  
+  <Expandable title="AppDataParams properties">
+    <ParamField path="appCode" type="string" default="CoW Swap">
+      Application identifier
+    </ParamField>
+    <ParamField path="environment" type="string">
+      Environment name (e.g., 'production', 'staging')
+    </ParamField>
+    <ParamField path="metadata" type="object">
+      Order metadata
+      
+      <Expandable title="Metadata properties">
+        <ParamField path="referrer" type="{ address: string }">
+          Referrer information
+        </ParamField>
+        <ParamField path="quote" type="{ slippageBips: number }">
+          Quote metadata with slippage tolerance
+        </ParamField>
+        <ParamField path="orderClass" type="{ orderClass: 'market' | 'limit' | 'liquidity' }">
+          Order classification
+        </ParamField>
+        <ParamField path="hooks" type="object">
+          Pre/post interaction hooks
+          
+          <Expandable title="Hooks structure">
+            <ParamField path="version" type="1">
+              Hooks version
+            </ParamField>
+            <ParamField path="pre" type="Array<Hook>">
+              Pre-interaction hooks
+            </ParamField>
+            <ParamField path="post" type="Array<Hook>">
+              Post-interaction hooks
+            </ParamField>
+          </Expandable>
+        </ParamField>
+        <ParamField path="partnerFee" type="{ bps: number, recipient: string }">
+          Partner fee configuration
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="document" type="LatestAppDataDocVersion">
+  Generated app-data document with latest version
+</ResponseField>
+
+#### Example
+
+```typescript
+const appDataDoc = await metadataApi.generateAppDataDoc({
+  appCode: 'My Trading App',
+  environment: 'production',
+  metadata: {
+    referrer: {
+      address: '0x123...',
+    },
+    quote: {
+      slippageBips: 50, // 0.5%
+    },
+    orderClass: {
+      orderClass: 'market',
+    },
+  },
+})
+
+console.log('App data document:', appDataDoc)
+// {
+//   version: '1.14.0',
+//   appCode: 'My Trading App',
+//   environment: 'production',
+//   metadata: { ... }
+// }
+```
+
+---
+
+### getAppDataInfo
+
+Calculate app-data information including CID, hex, and content.
+
+```typescript
+async getAppDataInfo(
+  appData: AnyAppDataDocVersion | string
+): Promise<AppDataInfo>
+```
+
+<ParamField path="appData" type="AnyAppDataDocVersion | string" required>
+  App data document object or JSON string
+</ParamField>
+
+<ResponseField name="info" type="AppDataInfo">
+  Complete app-data information
+  
+  <Expandable title="AppDataInfo properties">
+    <ResponseField name="appDataHex" type="string">
+      Hex string used in order's appData field (bytes32)
+    </ResponseField>
+    <ResponseField name="appDataContent" type="string">
+      Full JSON content (pre-image of appDataHex)
+    </ResponseField>
+    <ResponseField name="cid" type="string">
+      IPFS Content Identifier
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Info>
+- **appDataContent** - The exact string that gets hashed (keccak256) to produce appDataHex
+- **appDataHex** - The bytes32 value used in CoW Protocol orders
+- **cid** - IPFS identifier for finding the document
+</Info>
+
+#### Example
+
+```typescript
+const appDataDoc = await metadataApi.generateAppDataDoc({
+  appCode: 'My App',
+  metadata: {
+    quote: { slippageBips: 50 },
+  },
+})
+
+const { appDataHex, appDataContent, cid } = await metadataApi.getAppDataInfo(
+  appDataDoc
+)
+
+console.log('App data hex:', appDataHex)
+// '0x1234567890abcdef...'
+
+console.log('IPFS CID:', cid)
+// 'QmX...'
+
+console.log('Content:', appDataContent)
+// '{"version":"1.14.0","appCode":"My App",...}'
+```
+
+---
+
+### validateAppDataDoc
+
+Validate an app-data document against its schema.
+
+```typescript
+async validateAppDataDoc(
+  doc: AnyAppDataDocVersion
+): Promise<{ success: boolean; errors?: string }>
+```
+
+<ParamField path="doc" type="AnyAppDataDocVersion" required>
+  App data document to validate
+</ParamField>
+
+<ResponseField name="result" type="object">
+  Validation result
+  
+  <Expandable title="Result properties">
+    <ResponseField name="success" type="boolean">
+      Whether validation passed
+    </ResponseField>
+    <ResponseField name="errors" type="string">
+      Error description if validation failed
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+#### Example
+
+```typescript
+const doc = {
+  version: '1.14.0',
+  appCode: 'My App',
+  metadata: {},
+}
+
+const result = await metadataApi.validateAppDataDoc(doc)
+
+if (result.success) {
+  console.log('Document is valid')
+} else {
+  console.error('Validation errors:', result.errors)
+}
+```
+
+---
+
+### getAppDataSchema
+
+Retrieve app-data schema definition by version.
+
+```typescript
+getAppDataSchema(version: string): AppDataSchema
+```
+
+<ParamField path="version" type="string" required>
+  Schema version (e.g., '1.14.0')
+</ParamField>
+
+<ResponseField name="schema" type="AppDataSchema">
+  JSON schema definition
+</ResponseField>
+
+<Warning>
+Throws an error if the version doesn't exist.
+</Warning>
+
+#### Example
+
+```typescript
+const schema = metadataApi.getAppDataSchema('1.14.0')
+console.log('Schema:', schema)
+
+// Use for custom validation
+import Ajv from 'ajv'
+const ajv = new Ajv()
+const validate = ajv.compile(schema)
+const isValid = validate(myAppDataDoc)
+```
+
+## Conversion Methods
+
+### appDataHexToCid
+
+Convert app-data hex to IPFS CID.
+
+```typescript
+async appDataHexToCid(
+  appDataHex: string
+): Promise<string>
+```
+
+<ParamField path="appDataHex" type="string" required>
+  App data hex string (bytes32)
+</ParamField>
+
+<ResponseField name="cid" type="string">
+  IPFS Content Identifier
+</ResponseField>
+
+#### Example
+
+```typescript
+const cid = await metadataApi.appDataHexToCid(
+  '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
+)
+
+console.log('CID:', cid)
+// 'QmX...'
+```
+
+---
+
+### cidToAppDataHex
+
+Convert IPFS CID to app-data hex.
+
+```typescript
+async cidToAppDataHex(
+  cid: string
+): Promise<string>
+```
+
+<ParamField path="cid" type="string" required>
+  IPFS Content Identifier
+</ParamField>
+
+<ResponseField name="appDataHex" type="string">
+  App data hex string (bytes32)
+</ResponseField>
+
+#### Example
+
+```typescript
+const appDataHex = await metadataApi.cidToAppDataHex('QmX...')
+console.log('App data hex:', appDataHex)
+// '0x1234...'
+```
+
+---
+
+### fetchDocFromAppDataHex
+
+Fetch app-data document from IPFS using app-data hex.
+
+```typescript
+async fetchDocFromAppDataHex(
+  appDataHex: string
+): Promise<AnyAppDataDocVersion>
+```
+
+<ParamField path="appDataHex" type="string" required>
+  App data hex string
+</ParamField>
+
+<ResponseField name="document" type="AnyAppDataDocVersion">
+  Retrieved app-data document
+</ResponseField>
+
+<Note>
+Requires the document to be uploaded to IPFS.
+</Note>
+
+#### Example
+
+```typescript
+try {
+  const doc = await metadataApi.fetchDocFromAppDataHex(
+    '0x1234567890abcdef...'
+  )
+  
+  console.log('Retrieved document:', doc)
+} catch (error) {
+  console.error('Document not found in IPFS:', error)
+}
+```
+
+## Legacy Methods
+
+The `legacy` property provides deprecated methods for backward compatibility.
+
+### legacy.fetchDocFromCid
+
+```typescript
+metadataApi.legacy.fetchDocFromCid(cid: string): Promise<AnyAppDataDocVersion>
+```
+
+<Warning>
+Deprecated. Use `fetchDocFromAppDataHex` instead.
+</Warning>
+
+---
+
+### legacy.uploadMetadataDocToIpfs
+
+```typescript
+metadataApi.legacy.uploadMetadataDocToIpfs(
+  appData: AnyAppDataDocVersion
+): Promise<string>
+```
+
+<Warning>
+Deprecated. IPFS upload functionality is no longer actively maintained.
+</Warning>
+
+---
+
+### legacy.appDataToCid
+
+```typescript
+metadataApi.legacy.appDataToCid(
+  appData: AnyAppDataDocVersion | string
+): Promise<AppDataInfo>
+```
+
+<Warning>
+Deprecated. Use `getAppDataInfo` instead.
+</Warning>
+
+---
+
+### legacy.appDataHexToCid
+
+```typescript
+metadataApi.legacy.appDataHexToCid(
+  appDataHex: string
+): Promise<string>
+```
+
+<Warning>
+Deprecated. Uses old IPFS CID hashing algorithm.
+</Warning>
+
+---
+
+### legacy.fetchDocFromAppDataHex
+
+```typescript
+metadataApi.legacy.fetchDocFromAppDataHex(
+  appDataHex: string
+): Promise<AnyAppDataDocVersion>
+```
+
+<Warning>
+Deprecated. Uses old IPFS CID format.
+</Warning>
+
+## Common Use Cases
+
+### Creating Order with Metadata
+
+```typescript
+import { TradingSdk } from '@cowprotocol/sdk-trading'
+import { MetadataApi } from '@cowprotocol/sdk-app-data'
+import { OrderKind } from '@cowprotocol/sdk-order-book'
+
+const metadataApi = new MetadataApi(adapter)
+const sdk = new TradingSdk(
+  { chainId: 1, appCode: 'My App' },
+  {},
+  adapter
+)
+
+// 1. Generate metadata
+const appDataDoc = await metadataApi.generateAppDataDoc({
+  appCode: 'My Trading App',
+  metadata: {
+    referrer: { address: '0xReferrer...' },
+    quote: { slippageBips: 50 },
+    orderClass: { orderClass: 'market' },
+  },
+})
+
+// 2. Get app-data info
+const { appDataHex } = await metadataApi.getAppDataInfo(appDataDoc)
+
+// 3. Create order with app-data
+const { orderId } = await sdk.postSwapOrder(
+  {
+    kind: OrderKind.SELL,
+    sellToken: '0xSellToken...',
+    sellTokenDecimals: 18,
+    buyToken: '0xBuyToken...',
+    buyTokenDecimals: 18,
+    amount: '1000000000000000000',
+  },
+  {
+    // Pass app-data params directly
+    appData: {
+      appCode: 'My Trading App',
+      metadata: {
+        referrer: { address: '0xReferrer...' },
+        quote: { slippageBips: 50 },
+        orderClass: { orderClass: 'market' },
+      },
+    },
+  }
+)
+
+console.log('Order created with metadata:', orderId)
+```
+
+### Adding Hooks to Orders
+
+```typescript
+const appDataDoc = await metadataApi.generateAppDataDoc({
+  appCode: 'My App',
+  metadata: {
+    hooks: {
+      version: 1,
+      pre: [
+        {
+          target: '0xHookContract...',
+          callData: '0x70a08231000000000000000000000000...',
+          gasLimit: 21000,
+        },
+      ],
+      post: [
+        {
+          target: '0xAnotherContract...',
+          callData: '0xa9059cbb000000000000000000000000...',
+          gasLimit: 50000,
+        },
+      ],
+    },
+  },
+})
+
+const { appDataHex } = await metadataApi.getAppDataInfo(appDataDoc)
+console.log('App data with hooks:', appDataHex)
+```
+
+### Partner Fee Integration
+
+```typescript
+const appDataDoc = await metadataApi.generateAppDataDoc({
+  appCode: 'Partner App',
+  metadata: {
+    partnerFee: {
+      bps: 10, // 0.1% fee
+      recipient: '0xPartnerFeeRecipient...',
+    },
+  },
+})
+
+const { appDataHex } = await metadataApi.getAppDataInfo(appDataDoc)
+
+// Use in order
+const { orderId } = await sdk.postSwapOrder(
+  tradeParams,
+  {
+    appData: {
+      appCode: 'Partner App',
+      metadata: {
+        partnerFee: { bps: 10, recipient: '0xPartner...' },
+      },
+    },
+  }
+)
+```
+
+### Retrieving Order Metadata
+
+```typescript
+import { OrderBookApi } from '@cowprotocol/sdk-order-book'
+
+const orderBookApi = new OrderBookApi({ chainId: 1 })
+const metadataApi = new MetadataApi(adapter)
+
+// Get order
+const order = await orderBookApi.getOrder(orderUid)
+
+// Fetch metadata from app-data
+const appDataDoc = await metadataApi.fetchDocFromAppDataHex(
+  order.appData
+)
+
+console.log('Order metadata:', appDataDoc.metadata)
+console.log('App code:', appDataDoc.appCode)
+```
+
+## Schema Versions
+
+The SDK supports multiple app-data schema versions. The latest version is automatically used.
+
+```typescript
+import {
+  LATEST_APP_DATA_VERSION,
+  LATEST_QUOTE_METADATA_VERSION,
+  LATEST_REFERRER_METADATA_VERSION,
+} from '@cowprotocol/sdk-app-data'
+
+console.log('Latest app-data version:', LATEST_APP_DATA_VERSION)
+// '1.14.0'
+```
+
+### Available Schemas
+
+- `v0.1.0` - Initial schema
+- `v0.2.0` - Added quote metadata
+- `v0.3.0` - Added referrer support
+- `v0.4.0` - Added order class
+- ...
+- `v1.14.0` - Latest (includes hooks, partner fees, etc.)
+
+## Type Definitions
+
+```typescript
+import { v1_14_0 } from '@cowprotocol/sdk-app-data'
+
+function createAppData(
+  appCode: v1_14_0.AppCode,
+  metadata: v1_14_0.Metadata
+): v1_14_0.AppDataRootSchema {
+  return {
+    version: '1.14.0',
+    appCode,
+    metadata,
+  }
+}
+```
+
+## Error Handling
+
+```typescript
+try {
+  const { appDataHex } = await metadataApi.getAppDataInfo(appDataDoc)
+} catch (error) {
+  if (error.message.includes('Invalid appData')) {
+    console.error('App data validation failed:', error.message)
+  } else if (error.message.includes('calculate appDataHex')) {
+    console.error('Failed to calculate hash:', error.message)
+  } else {
+    console.error('Unexpected error:', error)
+  }
+}
+```
+
+## Best Practices
+
+1. **Always validate** - Use `validateAppDataDoc` before using app-data
+2. **Use latest version** - Let `generateAppDataDoc` pick the latest schema
+3. **Cache app-data** - Reuse `appDataHex` for identical metadata
+4. **Include referrer** - Track order sources with referrer metadata
+5. **Document hooks** - Clearly document any hooks for security audits
+
+## See Also
+
+- [TradingSdk](/api/trading-sdk) - High-level trading interface
+- [OrderBookApi](/api/order-book-api) - Order book API client
+- [OrderSigningUtils](/api/order-signing-utils) - Order signing utilities
+- [App-Data Documentation](https://docs.cow.fi/cow-protocol/reference/core/intents/app-data)
+- [Hooks Documentation](https://docs.cow.fi/cow-protocol/reference/core/intents/hooks)
